@@ -16,6 +16,10 @@
     "gulp": "^3.9.0",
     "gulp-develop-server": "^0.4.3",
     "underscore": "^1.8.3",
-    "mongoose": "^4.0.4"
+    "mongoose": "^4.0.4",
+    "mongoose-schema-extend": "^0.1.7",
+    "async": "^1.2.0",
+    "should": "^6.0.3",
+    "moloko": "^0.1.0"
   }
 }

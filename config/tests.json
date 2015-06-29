@@ -5,7 +5,7 @@
   },
 
   "database": {
-    "uri" : "mongodb://localhost/fx",
+    "uri" : "mongodb://localhost/fx_test",
     "options": {
       "user": "",
       "pass": "",
