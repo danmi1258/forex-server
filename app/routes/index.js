@@ -35,11 +35,10 @@ router.get('/terminals/:subscriber/subscriptions', function(req, res, next) {
 		if (!terminal) return next(new Error(404, 'not found error'));
 
 		Client.find({subscriptions: {$in: terminal.subscriptions}}, function(err, s) {
-			if (err) return next (err);
+	if (err) return next (err);
 			res.json(s);
 		});
 	});
 });
 
 module.exports = router;
-

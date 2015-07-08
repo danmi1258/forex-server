@@ -31,5 +31,24 @@
       "httpOnly": true,
       "maxAge": null
     }
-  }
+  },
+
+  "messageTypes": {
+    "BIND_REQ": 0,
+    "BIND_CONF": 1,
+    "ORDER_OPEN_REQ": 101,
+    "ORDER_OPEN_CONF": 102,
+    "ORDER_CLOSE_REQ": 103,
+    "ORDER_CLOSE_CONF": 104,
+    "ORDERS_IND": 10 
+  },
+
+  "orderStates": {
+    "CREATING": 11,
+    "CREATED":  12,
+    "CLOSING":  21,
+    "CLOSED":   22
+  },
+
+  "allowedTerminalTypes": ["consumer", "provider"]
 }

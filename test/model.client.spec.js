@@ -61,10 +61,53 @@ describe('project model', function() {
     describe('#unsubscribe', function() {
         it('#unsubcribe.  should remove provider from consumer`s subscription list', function(done) {
             consumer.unsubscribe(provider, function(err, res) {
-                console.log(res);
                 res.subscriptions.indexOf(provider._id).should.be.equal(-1);
                 done();
             })
         })
     });
+
+    describe('#getSubscribtions', function() {
+        it('Должен получить список подписок', function(done) {
+            consumer.subscribe(provider, function(err, res) {
+                if (err) {
+                    console.error(err);
+                    done(err);
+                }
+                consumer.getSubscribtions(function(err, res) {
+                    if (err) {
+                        console.error(err);
+                        done(err);
+                    }
+
+                    console.log(res);
+                    done();
+                })
+            })
+        })
+    })
+
+    describe('static #getByTid', function() {
+        it('should return client object', function(done) {
+            Client.getByTid(consumer.tid, function(err, res) {
+                if (err) {
+                    console.error(err);
+                    done(err);
+                }
+                
+                console.log(res);   
+                done();             
+            })
+        })
+    })
+
+    describe('#_authSocket', function() {
+        it('1123', function(done) {
+            var socket = require('../app/middleware/socket');
+            socket._authSocket('123', function(err, data) {
+                console.err(err);
+                console.log(123);
+            })
+        })
+    })
 });

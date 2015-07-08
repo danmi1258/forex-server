@@ -20,6 +20,7 @@
     "mongoose-schema-extend": "^0.1.7",
     "async": "^1.2.0",
     "should": "^6.0.3",
-    "moloko": "^0.1.0"
+    "moloko": "^0.1.0",
+    "gulp-yuidoc": "^0.1.2"
   }
 }

@@ -1,15 +1,105 @@
-var mongoose = require('mongoose');
-var BaseSchema = require('./base');
-var config = require('config');
-var messageTypes = config.messageTypes;
-var orderStates = config.orderStates;
-var sockets = require('../middleware/socket');
-var _ = require('underscore');
-var Order = require('./order');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>/home/sergey/WebstormProjects/myProjects/forex-server/app/models/client.js</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="hd" class="yui3-g header">
+        <div class="yui3-u-3-4">
+            
+                <h1><img src="../assets/css/logo.png" title=""></h1>
+            
+        </div>
+        <div class="yui3-u-1-4 version">
+            <em>API Docs for: </em>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/Client.html">Client</a></li>
+            
+                <li><a href="../classes/Default.html">Default</a></li>
+            
+                <li><a href="../classes/Order.html">Order</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: /home/sergey/WebstormProjects/myProjects/forex-server/app/models/client.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+var mongoose = require(&#x27;mongoose&#x27;);
+var BaseSchema = require(&#x27;./base&#x27;);
+var confing = require(&#x27;confing&#x27;);
+var sockets = require(&#x27;../middleware/socket&#x27;);
+var _ = require(&#x27;underscore&#x27;);
+var Order = require(&#x27;./order&#x27;);
 
 
 // !! not var. set is as global;
-extend = require('mongoose-schema-extend');
+extend = require(&#x27;mongoose-schema-extend&#x27;);
 
 
 /**
@@ -47,8 +137,7 @@ Client.statics.getSubscribtionHash = function() {
 Client.statics.create = function(data, callback) {
    var Terminal = this;
 
-   if (!data.name || !data.tid || !data.type) return callback(new Error('data error'));
-   if (config.allowedTerminalTypes.indexOf(data.type)== -1) return callback(new Error('not allowed terminal type'));
+   if (!data.name || !data.tid || !data.type) return callback(new Error(&#x27;data error&#x27;));
 
    var terminal = new Terminal(data);
 
@@ -57,16 +146,6 @@ Client.statics.create = function(data, callback) {
 };
 
 
-Client.statics.getByTid = function(tid, callback) {
-    this.findOne({tid: tid}, function(err, res) {
-        if (err) {
-            callback(err);
-            return;
-        }
-        callback(null, res);
-    })
-};
-
 /*  Сообщение через сокет
     ---------------------
     Метод отсылает сообщение через сокет на терминал. Если открытого сокета для данного терминала не найдено 
@@ -74,10 +153,7 @@ Client.statics.getByTid = function(tid, callback) {
 */
 Client.methods.sendMessage = function(message, callback) {
     var socket = sockets.getSocket(this.tid);
-    if (!socket) {
-        callback(new Error('socket not found')); 
-        return;
-    }
+    if (!socket) callback(&#x27;socket not found&#x27;); return;
     
     sockets.server.send(socket, message);
     callback(null);
@@ -100,7 +176,7 @@ Client.methods.alreadySubscribed = function(provider) {
     @return {object} - instance of Order
 **/
 Client.methods.subscribe = function(provider, callback) {
-    if (provider.type != 'provider') return callback(401);
+    if (provider.type != &#x27;provider&#x27;) return callback(401);
     if (this.alreadySubscribed(provider)) return callback(401);
 
     this.subscriptions.push(provider._id);
@@ -158,7 +234,7 @@ Client.methods.changeToken = function(token, callback) {
     Позволяет быстро получить все терминалы (в виде АПИ объектов) на которые подписан текущий терминал.
     */
 Client.methods.getSubscribtions = function(callback) {
-    this.model('client').find({subscriptions: {$in: this.subscriptions}}, callback);
+    this.find({subscriptions: {$in: this.subscriptions}}, callback);
 };
 
 
@@ -174,9 +250,7 @@ Client.methods.setPause = function() {};
 ##################################
 */
 
-
-
-
+var orderTypes = confing.orderTypes;
 
 /** @async
     @method createOrder 
@@ -186,60 +260,23 @@ Client.methods.setPause = function() {};
     Методы создает новую запись в таблице orders, привязывая его к текущему клиенту.
     Также метод делает уведомление по сокету своему терминалу с приказом об открытии нового ордера.
 
-    Используйте этот метод, когда хотите инициировать создание нового ордера со стороны сервера.
+    sИспользуйте этот метод, когда хотите инициировать создание нового ордера со стороны сервера.
 
     @param values {object} - данные для создания нового ордера
-        @param type {Integer}
-        @required
-        @param symbol {String}
-        @required
-        @param lots {Double}
-        @required
-        @param comment {String}
-        @required
     @param callback {function}
     @return {err, object} err, order
 **/
 Client.methods.createOrder = function(values, callback) {
-    
-    var requiredParams = {
-        type: 'number',
-        symbol: 'number',
-        lots: 'number',
-        comment: 'string'
-    };
-
-    var keys = Object.keys(requiredParams);
-
-    for (var i = 0; i < keys.length; i++) {
-        var key = keys[i];
-
-        if (!values[key] || typeof values[key] != requiredParams[key]) {
-            callback(new Error('bad params'));
-            return;
-        }
-    };
-    
-
-    values.status = orderStates.CREATING;
+    values.status = orderTypes.CREATING;
     values.client = this._id;
     
-    new Order(values).save(function(err, order) {
-        if (err) {
-            callback(err);
-            return;
-        }
-
-        client.sendMessage({
-            type: messageTypes.ORDER_OPEN_REQ,
-            data: {
-                type:   order.type,
-                symbol: order.symbol,
-                lots:   order.lots,
-                comment: order._id
-            }
-        });
+    client.sendMessage({
+        type: &#x27;&#x27;, // todo определить тип сообщения
+        data: {/* order values */} 
     });
+
+    new Order(values).save(callback);
+
 };
 
 
@@ -249,28 +286,26 @@ Client.methods.createOrder = function(values, callback) {
     Метод подтверждает открытие ордера в терминале.
     * Используйте этот метод, когда надо подтвердить факт, действительно ли ордер был открыт в терминале.
     
-    @prop orderTicket {Date} - время создания ордера в терминалом. Аналог ID
+    @prop orderTime {Date} - время создания ордера в терминалом. Аналог ID
     @return {object} - объект ордера как модель Order
 */
-Client.methods.confirmOrderCreation = function(orderTicket, callback) {
-    Order.getByTicket(orderTicket, function(err, order) {
+Client.methods.confirmOrderCreation = function(orderTime, callback) {
+    Order.getByTime(orderTime, function(err, order) {
         if (err) return callback(err);
         
-        order.status = orderStates.CREATED;
-        order.openedOn = new Date().getTime();
+        order.status = orderTypes.CREATED;
+        order.openedOn: new Date().getTime();
         order.save(callback);
     })
 };
 
-Client.methods.closeOrder = function(orderTicket, callback) {
-    var self = this;
-
-    Order.getByTicket(orderTicket, function(err, order) {
+Client.methods.closeOrder = function(orderTime) {
+    Order.getByTime(orderTime, function(err, order) {
         if (err) return callback(err);
 
-        self.sendMessage({
-            type: messageTypes.ORDER_CLOSE_REQ,
-            data: {ticket: order.ticket}
+        client.sendMessage({
+            type: &#x27;&#x27;, //todo определить тип сообщения
+            data: {orderTime: orderTime}
         });
 
         order.status = orderTime.CLOSING;
@@ -279,14 +314,11 @@ Client.methods.closeOrder = function(orderTicket, callback) {
 };
 
 
-Client.method.confirmOrderClosing = function(orderTicket) {
-    Order.getByTicket(orderTicket, function(err, order) {
-        if (err) {
-            callback(err);
-            return;
-        }
+Client.method.confirmOrderClosing = function(orderTime) {
+    Order.getByTime(orderTime, function(err, order) {
+        if (err) return callback(err);
 
-        order.status = orderStates.CLOSED;
+        order.status = orederTime.CLOSED;
         order.closedOn = new Date().getTime();
         order.save(callback);
     });
@@ -336,10 +368,9 @@ Client.methods.hasOpenOrders = function() {
     res: возвращаемые данные
     ------------------------
 
-    @property newOrders {Array} - список новых ордеров в виде объектов типа Order _[order, ...]_
-    @property closedOrders* {Array} - список закрытых ордеров в виде объектов типа Order _[order, ...]_
+    * @property newOrders {Array} - список новых ордеров в виде объектов типа Order _[order, ...]_
+    * closedOrders* {Array} - список закрытых ордеров в виде объектов типа Order _[order, ...]_
     
-
     @param orderList {object} see description orderList
     @param callback {function (err, res) } see res
 **/
@@ -350,8 +381,8 @@ Client.methods.checkOnChange = function(orderList, callback) {
     this.getOpenOrders(function(err, orders) {
         if (err) callback(err); return;
 
-        var ordersTIDs = _.pluck(orders, 'tid');
-        var ordersListTIDs = _.pluck(orderList, 'tid');
+        var ordersTIDs = _.pluck(orders, &#x27;tid&#x27;);
+        var ordersListTIDs = _.pluck(orderList, &#x27;tid&#x27;);
         var newOrders = [], closedOrders = [];
 
         // список ордеров, которые были созданы с момента последнего обращения
@@ -373,4 +404,23 @@ Client.methods.checkOnChange = function(orderList, callback) {
 };
 
 
-module.exports = mongoose.model('client', Client);
+module.exports = mongoose.model(&#x27;client&#x27;, Client);
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>
