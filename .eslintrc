@@ -1,0 +1,16 @@
+{
+   "rules": {
+       "strict": [2, "never"], // http://eslint.org/docs/rules/strict
+       "indent": [2, 4],
+       "quotes": [2, "single"],
+       "linebreak-style": [2, "unix"],
+       "semi": [2, "always"],
+       "no-trailing-spaces": [2, { skipBlankLines: true }], // http://eslint.org/docs/rules/no-trailing-spaces
+       "no-underscore-dangle": 0, // http://eslint.org/docs/rules/no-underscore-dangle
+       "handle-callback-err": [1, "^.*(e|E)rr"], // http://eslint.org/docs/rules/handle-callback-err
+   },
+   "env": {
+       "node": true,
+       "browser": false,
+   }
+}

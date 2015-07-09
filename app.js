@@ -13,7 +13,7 @@ var logger = require('./app/utils/logger');
 //var setCurUser = require('./middleware/currentUser');
 var apiRoutes = require('./app/routes');
 //var authRoute = require('./routes/auth');
-var socket = require('./app/middleware/socket');
+var socket = require('./app/socket');
 
 var app = express();
 

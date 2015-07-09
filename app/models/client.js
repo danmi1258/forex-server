@@ -136,7 +136,7 @@ Client.methods.changeToken = function(token, callback) {
     Позволяет быстро получить все терминалы (в виде АПИ объектов) на которые подписан текущий терминал.
     */
 Client.methods.getSubscribtions = function(callback) {
-    this.model('client').find({subscriptions: {$in: this.subscriptions}}, callback);
+    this.model('client').find({_id: {$in: this.subscriptions}}, callback);
 };
 
 

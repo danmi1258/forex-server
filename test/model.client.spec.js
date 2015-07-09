@@ -74,13 +74,17 @@ describe('project model', function() {
                     console.error(err);
                     done(err);
                 }
+
+                // console.log(provider._id);
+                // console.log('>>s',consumer);
+
                 consumer.getSubscribtions(function(err, res) {
                     if (err) {
                         console.error(err);
                         done(err);
                     }
 
-                    console.log(res);
+                    res[0]._id.toString.should.be.equal(provider._id.toString);
                     done();
                 })
             })
@@ -95,7 +99,7 @@ describe('project model', function() {
                     done(err);
                 }
                 
-                console.log(res);   
+                res._title.should.be.equal('client');   
                 done();             
             })
         })
