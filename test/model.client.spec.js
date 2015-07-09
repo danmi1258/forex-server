@@ -102,12 +102,12 @@ describe('project model', function() {
     })
 
     describe('#_authSocket', function() {
-        it('1123', function(done) {
-            var socket = require('../app/middleware/socket');
-            socket._authSocket('123', function(err, data) {
-                console.err(err);
-                console.log(123);
-            })
-        })
+        // it('1123', function(done) {
+        //     var socket = require('../app/middleware/socket');
+        //     socket._authSocket({tid: 313976131}, '313976131', function(err, data) {
+        //         console.err(err);
+        //         console.log(123);
+        //     })
+        // })
     })
 });

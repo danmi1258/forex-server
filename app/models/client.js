@@ -3,7 +3,6 @@ var BaseSchema = require('./base');
 var config = require('config');
 var messageTypes = config.messageTypes;
 var orderStates = config.orderStates;
-var sockets = require('../middleware/socket');
 var _ = require('underscore');
 var Order = require('./order');
 
@@ -36,12 +35,6 @@ var Client = BaseSchema.extend({
     type: String
 });
 
-Client.statics.getSubscribtionHash = function() {
-    return {
-        _id: null,
-        volume: 0.01
-    }
-};
 
 /* create new terminal */
 Client.statics.create = function(data, callback) {
@@ -67,21 +60,6 @@ Client.statics.getByTid = function(tid, callback) {
     })
 };
 
-/*  Сообщение через сокет
-    ---------------------
-    Метод отсылает сообщение через сокет на терминал. Если открытого сокета для данного терминала не найдено 
-    (терминал не имеет активного соединения), вернется ошибка.
-*/
-Client.methods.sendMessage = function(message, callback) {
-    var socket = sockets.getSocket(this.tid);
-    if (!socket) {
-        callback(new Error('socket not found')); 
-        return;
-    }
-    
-    sockets.server.send(socket, message);
-    callback(null);
-};
 
 
 Client.methods.alreadySubscribed = function(provider) {
@@ -224,22 +202,7 @@ Client.methods.createOrder = function(values, callback) {
     values.status = orderStates.CREATING;
     values.client = this._id;
     
-    new Order(values).save(function(err, order) {
-        if (err) {
-            callback(err);
-            return;
-        }
-
-        client.sendMessage({
-            type: messageTypes.ORDER_OPEN_REQ,
-            data: {
-                type:   order.type,
-                symbol: order.symbol,
-                lots:   order.lots,
-                comment: order._id
-            }
-        });
-    });
+    new Order(values).save(callback);
 };
 
 
@@ -268,10 +231,7 @@ Client.methods.closeOrder = function(orderTicket, callback) {
     Order.getByTicket(orderTicket, function(err, order) {
         if (err) return callback(err);
 
-        self.sendMessage({
-            type: messageTypes.ORDER_CLOSE_REQ,
-            data: {ticket: order.ticket}
-        });
+        
 
         order.status = orderTime.CLOSING;
         order.save(callback);

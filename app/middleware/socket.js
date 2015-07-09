@@ -2,6 +2,7 @@ var moloko = require('moloko');
 var Client = require('../models/client');
 var messageTypes = require('config').messageTypes;
 var async = require('async');
+var sockets = {};
 var port = 3010
 
 var server = moloko.server({
@@ -9,7 +10,6 @@ var server = moloko.server({
     port: port
 });
 
-module.exports.server = server;
 
 function start() {
     server.on('listening', function() {
@@ -18,7 +18,6 @@ function start() {
 
     server.on('connection', function(socket) {
         console.log('New connection is accepted');
-        console.log('socket', socket);
         //socket.interval = setInterval(function() {
         //	var data = { message: 'Test Message: ' + Date.now() }
         //	console.log('Send message to client:', data);
@@ -48,7 +47,7 @@ function start() {
                         type: messageTypes.BIND_CONF,
                         code: 403
                     });
-                    console.error('Socket auth error');
+                    console.error('Socket auth error', err);
                     return;
                 }
 
@@ -58,16 +57,25 @@ function start() {
                 });
 
                 socket.tid = message.data.tid;
-                _storeSocket(socket);
+                _storeSocket(socket, message.data.tid);
             })
+
+            return;
         }
 
         
+
+        if (!socket.tid) {
+            console.log('non auth socket try to send message');
+            return;
+        }
+
         /* Обработка сообщений от авторизованных клиентов
         В потоке определим клиента, сделавшего запрос, далее установим свитчи
         на типы сообщений.
         В зависимости от типа будем соответствующе реагировать.
         */
+
         async.waterfall([
             function(callback) {
                 _getClientByTid(socket.tid, callback);
@@ -83,6 +91,17 @@ function start() {
 
                     case messageTypes.ORDER_OPEN_CONFIRM:
                         // message must have field data.orderTime
+
+        //                 client.sendMessage({
+        //     type: messageTypes.ORDER_OPEN_REQ,
+        //     data: {
+        //         type:   order.type,
+        //         symbol: order.symbol,
+        //         lots:   order.lots,
+        //         comment: order._id
+        //     }
+        // });
+
                         if (message.code != 0) {
                             console.error('ORDER_OPEN_CONFIRM error ', message.code);
                             break;
@@ -93,6 +112,12 @@ function start() {
 
 
                     case messageTypes.ORDER_CLOSE_CONF:
+
+        //                 self.sendMessage({
+        //     type: messageTypes.ORDER_CLOSE_REQ,
+        //     data: {ticket: order.ticket}
+        // });
+
                         if (message.code != 0) {
                             console.error('ORDER_OPEN_CONFIRM error ', message.code);
                             break;
@@ -115,7 +140,7 @@ function start() {
 
 
 
-var sockets = {};
+
 
 var _newOrderHandler = function(order, callback) {
 
@@ -132,6 +157,10 @@ var _getClientByTid = function(tid, callback) {
 
 var _authSocket = function(socket, token, callback) {
 
+    // todo временно отключена
+    return callback();
+
+
     Client.getByTid(socket.tid, function(err, client) {
         if (err) return console.error(err);
         client.token == token ? callback(null) : callback('403. Auth error, bad token.');
@@ -139,14 +168,8 @@ var _authSocket = function(socket, token, callback) {
 };
 
 var _storeSocket = function(socket, tid) {
-    Client.find({tid: tid}, function(err, client) {
-        if (err) console.error(err);
-        socket.terminalId = client._id;
-    });
-
     sockets[tid] = socket;
-
-    // test tid provider 313976131
+    console.log(sockets.length);
 };
 
 
@@ -191,5 +214,6 @@ function openOrdersMessageHandler(client, callback) {
 
 module.exports = {
     start: start,
-    _authSocket: _authSocket
+    _authSocket: _authSocket,
+    server: server
 };
