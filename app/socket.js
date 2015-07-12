@@ -1,15 +1,15 @@
 var moloko = require('moloko');
-var Client = require('../models/client');
+var Client = require('./models/client');
 var messageTypes = require('config').messageTypes;
 var async = require('async');
 var sockets = [];
 // todo move to config
-var port = 3010;
+var port = 5555;
 var _ = require('underscore');
 
 
 var server = moloko.server({
-    host: '192.168.40.21',
+    host: '127.0.0.1',
     port: port
 });
 
@@ -23,23 +23,44 @@ function getSocketByTid(tid) {
 }
 
 function storeSocket(socket) {
-    if (sockets.indexOf(socket)) {
+    if (sockets.indexOf(socket) === -1) {
         sockets.push(socket);
     }
 }
 
 function removeSocket(socket) {
     var index = sockets.indexOf(socket);
-    index != -1 && sockets.splice(index, 1);
+    index !== -1 && sockets.splice(index, 1);
 }
 
+function authSocket(socket, token, callback) {
 
+    // временная заглушка
+    return callback(null);
+
+
+    if (!socket.tid) {
+        console.error('[authSocket] error: socket.tid required');
+        callback(Error('socket.tid required'));
+        return;
+    }
+
+    Client.getByTid(socket.tid, function(err, client) {
+        if (err) {
+            console.error('[authSocket] db find error: ', err);
+            callback(err);
+            return;
+        }
+
+        client.token === token ? callback(null) : callback(Error('403. Auth error, bad token.'));
+    });
+}
 
 /* MESSAGES HANDLERS
 ==============================================*/
 
 function messageBindReq(socket, message) {
-    _authSocket(socket, message.data.token, function(err) {
+    authSocket(socket, message.data.token, function(err) {
         if (err) {
             server.send(socket, {
                 type: messageTypes.BIND_CONF,
@@ -51,7 +72,7 @@ function messageBindReq(socket, message) {
 
         socket.tid = message.data.tid;
 
-        _storeSocket(socket, message.data.tid);
+        storeSocket(socket, message.data.tid);
 
         server.send(socket, {
                 type: messageTypes.BIND_CONF,
@@ -114,6 +135,8 @@ module.exports.start = function start() {
 
     server.on('message', function(socket, message) {
 
+        console.log(123123, message.type);
+
         if (message.type === messageTypes.BIND_REQ) {
             messageBindReq(socket, message);
             return;
@@ -125,75 +148,95 @@ module.exports.start = function start() {
             return;
         }
 
-        async.waterfall([
-            function(callback) {
-                Client.getByTid(socket.tid, callback);
-            },
-            function(client, callback) {
+        switch(message.type) {
 
-                switch(message.type) {
-                    case messageTypes.ORDERS_IND:
-                        messageOrderInd(client, callback);
-                        break;
+            case messageTypes.ORDERS_IND:
+            console.log('new message received');
+            break;
 
-                    case messageTypes.ORDER_OPEN_CONFIRM:
-                        // message must have field data.orderTime
+            case messageTypes.ORDER_OPEN_REQ:
+            break;
 
-        //                 client.sendMessage({
-        //     type: messageTypes.ORDER_OPEN_REQ,
-        //     data: {
-        //         type:   order.type,
-        //         symbol: order.symbol,
-        //         lots:   order.lots,
-        //         comment: order._id
+            case messageTypes.ORDER_CLOSE_REQ:
+            break;
+
+            default:
+            break;
+        }
+
+        return;
+
+        // async.waterfall([
+        //     function(callback) {
+        //         Client.getByTid(socket.tid, callback);
+        //     },
+        //     function(client, callback) {
+
+        //         switch(message.type) {
+        //             case messageTypes.ORDERS_IND:
+        //                 messageOrderInd(client, callback);
+        //                 break;
+
+        //             case messageTypes.ORDER_OPEN_CONFIRM:
+        //                 // message must have field data.orderTime
+
+        // //                 client.sendMessage({
+        // //     type: messageTypes.ORDER_OPEN_REQ,
+        // //     data: {
+        // //         type:   order.type,
+        // //         symbol: order.symbol,
+        // //         lots:   order.lots,
+        // //         comment: order._id
+        // //     }
+        // // });
+
+        //                 if (message.code != 0) {
+        //                     console.error('ORDER_OPEN_CONFIRM error ', message.code);
+        //                     break;
+        //                 };
+
+        //                 client.confirmOrderCreation(message.data.ticket, callback);
+        //                 break;
+
+
+        //             case messageTypes.ORDER_CLOSE_CONF:
+
+        // //                 self.sendMessage({
+        // //     type: messageTypes.ORDER_CLOSE_REQ,
+        // //     data: {ticket: order.ticket}
+        // // });
+
+        //                 if (message.code != 0) {
+        //                     console.error('ORDER_OPEN_CONFIRM error ', message.code);
+        //                     break;
+        //                 };
+        //                 client.confirmOrderClosing(message.data.ticket, callback);
+        //                 break;
+
+
+        //             default:
+        //                 callback('Не найден обработчик сигнала или блядская ошибка типа ', message.code);
+
+        //         }
         //     }
+
+        // ], function(err) {
+        //     if (err) console.error(err);
         // });
-
-                        if (message.code != 0) {
-                            console.error('ORDER_OPEN_CONFIRM error ', message.code);
-                            break;
-                        };
-
-                        client.confirmOrderCreation(message.data.ticket, callback);
-                        break;
-
-
-                    case messageTypes.ORDER_CLOSE_CONF:
-
-        //                 self.sendMessage({
-        //     type: messageTypes.ORDER_CLOSE_REQ,
-        //     data: {ticket: order.ticket}
-        // });
-
-                        if (message.code != 0) {
-                            console.error('ORDER_OPEN_CONFIRM error ', message.code);
-                            break;
-                        };
-                        client.confirmOrderClosing(message.data.ticket, callback);
-                        break;
-
-
-                    default:
-                        callback('Не найден обработчик сигнала или блядская ошибка типа ', message.code);
-
-                }
-            }
-
-        ], function(err) {
-            if (err) console.error(err);
-        });
-    });
-}
-
-
-var _authSocket = function(socket, token, callback) {
-
-    // todo временно отключена
-    return callback();
-
-
-    Client.getByTid(socket.tid, function(err, client) {
-        if (err) return console.error(err);
-        client.token == token ? callback(null) : callback('403. Auth error, bad token.');
     });
 };
+
+
+// exports for tests
+
+module.exports.tests = {
+    getSocketByTid: getSocketByTid,
+    storeSocket: storeSocket,
+    removeSocket: removeSocket,
+    authSocket: authSocket,
+    messageBindReq: messageBindReq,
+    sockets: sockets
+};
+
+
+

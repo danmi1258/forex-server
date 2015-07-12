@@ -1,7 +1,6 @@
 var mongoose = require('mongoose');
 var BaseSchema = require('./base');
 var config = require('config');
-var messageTypes = config.messageTypes;
 var orderStates = config.orderStates;
 var _ = require('underscore');
 var Order = require('./order');
@@ -38,15 +37,20 @@ var Client = BaseSchema.extend({
 
 /* create new terminal */
 Client.statics.create = function(data, callback) {
-   var Terminal = this;
 
-   if (!data.name || !data.tid || !data.type) return callback(new Error('data error'));
-   if (config.allowedTerminalTypes.indexOf(data.type)== -1) return callback(new Error('not allowed terminal type'));
+    var Terminal = this;
 
-   var terminal = new Terminal(data);
+    if (!data.name || !data.tid || !data.type) {
+        callback(new Error('data error'));
+        return;
+    }
 
+    if (config.allowedTerminalTypes.indexOf(data.type) === -1) {
+        callback(new Error('not allowed terminal type'));
+        return;
+    }
 
-   terminal.save(callback);
+    new Terminal(data).save(callback);
 };
 
 
@@ -157,12 +161,11 @@ Client.methods.setPause = function() {};
 
 
 /** @async
-    @method createOrder 
+    @method createOrder
     @description Создать запись о новом ордере
     ==========================================
     
     Методы создает новую запись в таблице orders, привязывая его к текущему клиенту.
-    Также метод делает уведомление по сокету своему терминалу с приказом об открытии нового ордера.
 
     Используйте этот метод, когда хотите инициировать создание нового ордера со стороны сервера.
 
@@ -192,11 +195,11 @@ Client.methods.createOrder = function(values, callback) {
     for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
 
-        if (!values[key] || typeof values[key] != requiredParams[key]) {
+        if (!values[key] || typeof values[key] !== requiredParams[key]) {
             callback(new Error('bad params'));
             return;
         }
-    };
+    }
     
 
     values.status = orderStates.CREATING;

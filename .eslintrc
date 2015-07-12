@@ -12,5 +12,6 @@
    "env": {
        "node": true,
        "browser": false,
+       "mocha": true
    }
 }

@@ -30,13 +30,16 @@ describe('project model', function() {
             //});
         });
 
-        it("should create new client type of consumer", function (done) {
+        it('should create new client type of consumer', function (done) {
 
             new Client({type: 'consumer', name: 'sdf'}).save(function (err, res) {
-                if (err) console.log(err);
+                if(err) {
+                    console.error(err);
+                    return;
+                }
                 res.type.should.be.equal('consumer');
                 consumer = res;
-                done()
+                done();
             });
         });
 
@@ -44,10 +47,15 @@ describe('project model', function() {
 
     describe('#subsribe', function() {
         it('should add provider to consumer subscription list', function(done) {
-            consumer.subscribe(provider, function(err, res) {
+            consumer.subscribe(provider, function (err, res) {
+                if (err) {
+                    console.error(err);
+                    done();
+                    return;
+                }
                 res.subscriptions.indexOf(provider._id).should.not.be.equal(-1);
                 done();
-            })
+            });
         });
 
         it('не должен подписывать на клиентов у которых type != provider', function(done) {
