@@ -51,7 +51,9 @@ Client.statics.create = function(data, callback) {
         return;
     }
 
-    new Terminal(data).save(callback);
+    new Terminal(data).save(function(err, res) {
+        callback(err, res);
+    });
 };
 
 
@@ -179,10 +181,19 @@ Client.methods.setPause = function() {};
         @required
         @prop comment {String}
         @required
+        @prop ticket {Integer}
+    @param _options {Object}
+        @ prop confirm {Boolean} - if true then order will be confirmed imediatly
     @param callback {function}
     @return {err, object} err, order
 **/
-Client.methods.createOrder = function(values, callback) {
+Client.methods.createOrder = function(values, _options, callback) {
+    
+    if (arguments.length === 2) {
+        callback = arguments[1];
+        _options = null;
+    }
+
     
     var requiredParams = {
         type: 'number',
@@ -192,7 +203,9 @@ Client.methods.createOrder = function(values, callback) {
     };
 
     var keys = Object.keys(requiredParams);
+    var self = this;
 
+    // validate for required properties
     for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
 
@@ -202,10 +215,27 @@ Client.methods.createOrder = function(values, callback) {
         }
     }
 
-    values.status = orderStates.CREATING;
+    // validate for the options complience
+    if (_options && _options.confirm && !values.ticket) {
+        console.log('warning! try to set order as confirmed but order.ticket do not specified... ');
+    }
+
+    values.state = orderStates.CREATING;
     values.client = this._id;
     
-    new Order(values).save(callback);
+    async.waterfall([
+        function (next) {
+            new Order(values).save(next);
+        },
+        function(order, num, next) {
+            if (_options && _options.confirm) {
+                self.confirmOrderCreation(order, next);
+                return;
+            }
+            next(null, order);
+        }
+    ], callback);
+    
 };
 
 
@@ -216,34 +246,75 @@ Client.methods.createOrder = function(values, callback) {
     * Используйте этот метод, когда надо подтвердить факт, действительно ли ордер был открыт в терминале.
     
     @prop orderTicket {Date} - время создания ордера в терминалом. Аналог ID
-    @return {object} - object Client. this
+    @return {object} - Order
 */
 Client.methods.confirmOrderCreation = function(orderTicket, callback) {
     
+    var self = this;
+
     async.waterfall([
         // get order
         function (next) {
+            if (orderTicket._id) {
+                next(null, orderTicket);
+                return;
+            }
+
             Order.getByTicket(orderTicket, next);
         },
         // modify order status & openTime
         function (order, next) {
-            order.status = orderStates.CREATED;
+            order.state = orderStates.CREATED;
             order.openedOn = new Date().getTime();
             order.save(next);
         },
         // add orderId to client @openOrders
         function (order, num, next) {
-            this.openOrders.push(order._id);
-            this.save(next);
-        },
-        function (client, num, next) {
-            next(null, client);
+            self.openOrders.push(order._id);
+            self.save(function(err) {
+                next(err, order);
+            });
         }
     ], callback);
 };
 
+/**
+    @method closeOrder
+    @param orderTicket {Integer}
+    @param _options {Object}
+        @prop confirm {Boolean} - if true then order closing will be confirmed imediatly
+    @param callback {Function} arg: err, order
+*/
+Client.methods.closeOrder = function(orderTicket, _options, callback) {
 
-Client.methods.closeOrder = function(orderTicket, callback) {
+    if (arguments.length === 2) {
+        callback = arguments[1];
+        _options = null;
+    }
+
+    var self = this;
+
+    async.waterfall([
+        function(next) {
+            if (orderTicket._id) {
+                next(null, orderTicket);
+                return;
+            }
+
+            Order.getByTicket(orderTicket, next);
+        },
+        function(order, next) {
+            order.state = orderStates.CLOSING;
+            order.save(next);
+        },
+        function(order, num, next) {
+            if (_options.confirm) {
+                self.confirmOrderClosing(order, next);
+            } else {
+                next(null, order);
+            }
+        }
+    ], callback);
 
     Order.getByTicket(orderTicket, function(err, order) {
         if (err) {
@@ -251,23 +322,44 @@ Client.methods.closeOrder = function(orderTicket, callback) {
             return;
         }
 
-        order.status = orderStates.CLOSING;
+        order.state = orderStates.CLOSING;
         order.save(callback);
     });
 };
 
 
 Client.method.confirmOrderClosing = function(orderTicket, callback) {
-    Order.getByTicket(orderTicket, function(err, order) {
-        if (err) {
-            callback(err);
-            return;
-        }
 
-        order.status = orderStates.CLOSED;
-        order.closedOn = new Date().getTime();
-        order.save(callback);
-    });
+    var self = this;
+
+    async.waterfall([
+        function(next) {
+            if (orderTicket._id) {
+                next(null, orderTicket);
+                return;
+            }
+
+            Order.getByTicket(orderTicket, next);
+        },
+        function(order, next) {
+            order.state = orderStates.CLOSED;
+            order.closedOn = new Date().getTime();
+            order.save(next);
+        },
+        function(order, num, next) {
+            var index = self.openOrders(order._id);
+            if (index !== -1) {
+                self.splice(index, 1);
+                self.save(function(err) {
+                    next(err, order);
+                });
+            }
+            else {
+                console.log('WARNING!!! try to remove open order id from openOrder list, but it was not founded');
+                next(null, order);
+            }
+        }
+    ], callback);
 };
 
 

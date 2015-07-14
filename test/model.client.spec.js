@@ -62,8 +62,8 @@ describe('project model', function() {
             consumer.subscribe(consumer, function(err, res) {
                 err.should.not.be.equal(null);
                 done();
-            })
-        })
+            });
+        });
     });
 
     describe('#unsubscribe', function() {
@@ -94,10 +94,10 @@ describe('project model', function() {
 
                     res[0]._id.toString.should.be.equal(provider._id.toString);
                     done();
-                })
-            })
-        })
-    })
+                });
+            });
+        });
+    });
 
     describe('static #getByTid', function() {
         it('should return client object', function(done) {
@@ -107,13 +107,14 @@ describe('project model', function() {
                     done(err);
                 }
                 
-                res._title.should.be.equal('client');   
-                done();             
-            })
-        })
-    })
+                res._title.should.be.equal('client');
+                done();
+            });
+        });
+    });
 
     describe('#_authSocket', function() {
+        
         // it('1123', function(done) {
         //     var socket = require('../app/middleware/socket');
         //     socket._authSocket({tid: 313976131}, '313976131', function(err, data) {
@@ -121,5 +122,73 @@ describe('project model', function() {
         //         console.log(123);
         //     })
         // })
-    })
+    });
+
+    describe('#createOrder', function() {
+
+        var providerOrder, consumerOrder, _provider, _consumer;
+
+        var values = {
+                type: 1,
+                symbol: 'eurUsd',
+                lots: 0.1,
+                comment: 'comment'
+            };
+
+        before(function(done) {
+            async.waterfall([
+                // crate order for provider
+                function(next) {
+                    provider.createOrder(values, {confirm: true}, next);
+                },
+                // update provider
+                function(_order, next) {
+                    providerOrder = _order;
+                    Client.getByTid(provider.tid, next);
+                },
+                // create order for consumer
+                function(res, next) {
+                    _provider = res;
+                    provider.createOrder(values, next);
+                },
+                function(res, next) {
+                    consumerOrder = res;
+                    Client.getByTid(consumer.tid, next);
+                },
+                function(res, next) {
+                    _consumer = res;
+                    next();
+                }
+                // update consumer
+            ], done);
+        });
+
+        it('created order for provider should has correct properties ...', function() {
+            providerOrder.should.have.properties({
+                type: 1,
+                symbol: 'eurUsd',
+                lots: 0.1,
+                state: 12,
+                client: _provider._id.toString()
+            });
+        });
+
+        it('created order for consumer should has correct properties ...', function() {
+            consumerOrder.should.have.properties({
+                type: 1,
+                symbol: 'eurUsd',
+                lots: 0.1,
+                state: 11,
+                client: _provider._id.toString()
+            });
+        });
+
+        it('should add new order for provider to open order list', function() {
+            provider.openOrders[0].should.be.equal(providerOrder._id);
+        });
+
+        it('should not add new order for provier to open order list', function() {
+            consumer.openOrders.length.should.be.equal(0);
+        });
+    });
 });

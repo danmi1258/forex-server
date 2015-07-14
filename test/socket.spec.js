@@ -49,7 +49,7 @@ describe('#clear db', function() {
     });
 });
 
-describe('socket #messageOrderInd asdf', function() {
+describe('socket #messageOrderInd', function() {
     var provider, consumer1;
 
     before(function(done) {
@@ -69,6 +69,7 @@ describe('socket #messageOrderInd asdf', function() {
             },
             function(next) {
                 next = Array.prototype.slice.call(arguments).pop();
+                next()
                 // @param type {Integer}
                 // @param symbol {String}
                 // @param lots {Double}
@@ -86,11 +87,12 @@ describe('socket #messageOrderInd asdf', function() {
     describe('#messageOrderInd', function() {
         it('123', function(done) {
             // socketMethods.messageOrderInd(provider, )
-            console.log(12, consumer1);
-            provider.getOrders(function(err, res) {
-                console.log(err, res);
-                done()
-            });
+            // console.log(12, consumer1);
+            done();
+            // provider.getOrders(function(err, res) {
+            //     console.log(err, res);
+            //     done();
+            // });
         });
     });
 
