@@ -17,17 +17,17 @@ describe('project model', function() {
         it("should create new client type of provider", function (done) {
 
             Client.create({name: 'test', tid: '123', type: 'provider'}, function(err, res) {
+                if (err) {
+                    console.error(err);
+                    done(err);
+                    return;
+                }
+
                 res.type.should.be.equal('provider');
                 provider = res;
 
                 done();
             });
-
-            //new Client({type: 'provider'}).save(function (err, res) {
-            //    res.type.should.be.equal('provider');
-            //    provider = res;
-            //    //done()
-            //});
         });
 
         it('should create new client type of consumer', function (done) {

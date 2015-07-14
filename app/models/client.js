@@ -4,6 +4,7 @@ var config = require('config');
 var orderStates = config.orderStates;
 var _ = require('underscore');
 var Order = require('./order');
+var async = require('async');
 
 
 // !! not var. set is as global;
@@ -41,7 +42,7 @@ Client.statics.create = function(data, callback) {
     var Terminal = this;
 
     if (!data.name || !data.tid || !data.type) {
-        callback(new Error('data error'));
+        callback(new Error('argument data error'));
         return;
     }
 
@@ -170,13 +171,13 @@ Client.methods.setPause = function() {};
     Используйте этот метод, когда хотите инициировать создание нового ордера со стороны сервера.
 
     @param values {object} - данные для создания нового ордера
-        @param type {Integer}
+        @prop type {Integer}
         @required
-        @param symbol {String}
+        @prop symbol {String}
         @required
-        @param lots {Double}
+        @prop lots {Double}
         @required
-        @param comment {String}
+        @prop comment {String}
         @required
     @param callback {function}
     @return {err, object} err, order
@@ -185,7 +186,7 @@ Client.methods.createOrder = function(values, callback) {
     
     var requiredParams = {
         type: 'number',
-        symbol: 'number',
+        symbol: 'string',
         lots: 'number',
         comment: 'string'
     };
@@ -195,12 +196,11 @@ Client.methods.createOrder = function(values, callback) {
     for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
 
-        if (!values[key] || typeof values[key] !== requiredParams[key]) {
-            callback(new Error('bad params'));
+        if (values[key] === undefined || typeof values[key] !== requiredParams[key]) {
+            callback(new Error('bad param @values'));
             return;
         }
     }
-    
 
     values.status = orderStates.CREATING;
     values.client = this._id;
@@ -216,33 +216,48 @@ Client.methods.createOrder = function(values, callback) {
     * Используйте этот метод, когда надо подтвердить факт, действительно ли ордер был открыт в терминале.
     
     @prop orderTicket {Date} - время создания ордера в терминалом. Аналог ID
-    @return {object} - объект ордера как модель Order
+    @return {object} - object Client. this
 */
 Client.methods.confirmOrderCreation = function(orderTicket, callback) {
-    Order.getByTicket(orderTicket, function(err, order) {
-        if (err) return callback(err);
-        
-        order.status = orderStates.CREATED;
-        order.openedOn = new Date().getTime();
-        order.save(callback);
-    })
+    
+    async.waterfall([
+        // get order
+        function (next) {
+            Order.getByTicket(orderTicket, next);
+        },
+        // modify order status & openTime
+        function (order, next) {
+            order.status = orderStates.CREATED;
+            order.openedOn = new Date().getTime();
+            order.save(next);
+        },
+        // add orderId to client @openOrders
+        function (order, num, next) {
+            this.openOrders.push(order._id);
+            this.save(next);
+        },
+        function (client, num, next) {
+            next(null, client);
+        }
+    ], callback);
 };
+
 
 Client.methods.closeOrder = function(orderTicket, callback) {
-    var self = this;
 
     Order.getByTicket(orderTicket, function(err, order) {
-        if (err) return callback(err);
+        if (err) {
+            callback(err);
+            return;
+        }
 
-        
-
-        order.status = orderTime.CLOSING;
+        order.status = orderStates.CLOSING;
         order.save(callback);
-    })
+    });
 };
 
 
-Client.method.confirmOrderClosing = function(orderTicket) {
+Client.method.confirmOrderClosing = function(orderTicket, callback) {
     Order.getByTicket(orderTicket, function(err, order) {
         if (err) {
             callback(err);
@@ -256,16 +271,35 @@ Client.method.confirmOrderClosing = function(orderTicket) {
 };
 
 
-/*  Получает список открытых ордеров.
-    ==================================
+/*  Получает список ордеров.
+    ========================
+    
+    Возможна фильтрация по статусу (состоянию) ордера. Статусы передаются в массиве.
+    Если статусы не переданы, вернет список всех ордеров.
+
+    @param _options {Object}
+        @param {Array} - _options.states. For query by status.
     @return {Array} - список открытых ордеров в виде объектов модели Order
 
 */
-Client.methods.getOpenOrders = function(callback) {
-    this.find({ client: this._id, _id: {$in: this.openOrders }}, function(err, res) {
-        if (err) callback(err); return;
-        callback(null, res);
-    })
+Client.methods.getOrders = function(_options, callback) {
+    var options = arguments.length === 2 ? arguments[0] : {};
+    callback = Array.prototype.slice.call(arguments).pop();
+    callback = _.isFunction(callback) ? callback : Function;
+
+    var query = {
+        client: this._id,
+        _id: {$in: this.openOrders }
+    };
+
+    if (options.states && _.isArray(options.states)) {
+        query.states = {$in: options.states};
+    }
+
+    this.model('client').find({_id: {$in: this.openOrders }}, function(err, res) {
+
+        callback(err, res);
+    });
 };
 
 /*  Проверка на наличине открытых ордеров
@@ -281,19 +315,29 @@ Client.methods.hasOpenOrders = function() {
     @description Сверить ордера
     ===========================
 
-    Метод получает список открытых позиций и сравнивает с уже открытыми. 
+    Метод получает список открытых позиций и сравнивает с уже открытыми.
     Возвращает информацию с отличиями.
     
-    хэш сообщения от терминала orderList 
+    хэш сообщения от терминала orderList (message.data)
     ------------------------------------
 
-        orderList = [{
+    orderList = [{
+        symbol: String,
+        type: Number (Int),
+        lots: Number (double)
+        open-time: Number (Int timestamp linux)
+        open-price: Number (Double)
+        swap: Number (Double)
+        profit: Number (Int)
+        take-profit: Number (Int)
+
+
         orederOpenTime,
         orderSymbol,
         orderType,
         orderProfit,
         tid,
-        client   
+        client
     }]
 
     res: возвращаемые данные
@@ -308,10 +352,12 @@ Client.methods.hasOpenOrders = function() {
 **/
 Client.methods.checkOnChange = function(orderList, callback) {
  
-
     //  запрос списка открытых ордеров, принадлежащих данному клиенту.
-    this.getOpenOrders(function(err, orders) {
-        if (err) callback(err); return;
+    this.getOrders({states: [config.orderStates.CREATED]}, function(err, orders) {
+        if (err) {
+            callback(err);
+            return;
+        }
 
         var ordersTIDs = _.pluck(orders, 'tid');
         var ordersListTIDs = _.pluck(orderList, 'tid');
@@ -320,19 +366,19 @@ Client.methods.checkOnChange = function(orderList, callback) {
         // список ордеров, которые были созданы с момента последнего обращения
         if (ordersTIDs.length){
             newOrders = _.filter(orderList, function(e) {
-                return ordersTIDs.indexOf(e.tid) == -1;
-            })    
+                return ordersTIDs.indexOf(e.tid) === -1;
+            });
         }
 
         // список ордеров, которые были закрыты с момента последнего обращения
         if (ordersListTIDs) {
-            var closedOrders = _.filter(orders, function(e) {
-                return ordersListTIDs.indexOf(e.tid) == -1; 
-            })    
+            closedOrders = _.filter(orders, function(e) {
+                return ordersListTIDs.indexOf(e.tid) === -1;
+            });
         }
 
         callback(null, {newOrders: newOrders, closedOrders: closedOrders});
-    })
+    });
 };
 
 

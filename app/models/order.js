@@ -20,9 +20,9 @@ var Order = BaseSchema.extend({
     // volume
     lots: {type: Number, require: true},
     // status: 11-opening, 12-opened, 21-closing, 22-closed
-    status: {type: Number, default: 0},
-    /* History of the trading. Hash: 
-    	{profit[number]} 
+    state: {type: Number, default: 0},
+    /* History of the trading. Hash:
+    	{profit[number]}
     */
     history: Array,
     // has value then the order opened in the terminal(confirm open order)

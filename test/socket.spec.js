@@ -3,12 +3,7 @@ var async = require('async');
 var should = require('should');
 var Client = require('../app/models/client');
 var socketMethods = require('../app/socket').tests;
-var moloko = require('moloko');
-var port = 3010;
-var server = moloko.server({
-    host: 'localhost',
-    port: port
-});
+
 
 
 describe('#clear db', function() {
@@ -54,30 +49,49 @@ describe('#clear db', function() {
     });
 });
 
-describe('socket #messageOrderInd', function() {
+describe('socket #messageOrderInd asdf', function() {
     var provider, consumer1;
 
     before(function(done) {
         async.waterfall([
             function(next) {
-                Client.create({name: 'test', tid: '123', type: 'provider'}, next);
+                Client.create({name: 'provider', tid: '123', type: 'provider'}, next);
             },
             function(client, next) {
+                next = Array.prototype.slice.call(arguments).pop();
                 provider = client;
-                Client.create({name: 'test', tid: '123', type: 'consumer'}, next);
+                Client.create({name: 'consumer1', tid: '12345', type: 'consumer'}, next);
             },
             function(client, next) {
+                next = Array.prototype.slice.call(arguments).pop();
                 consumer1 = client;
                 consumer1.subscribe(provider, next);
+            },
+            function(next) {
+                next = Array.prototype.slice.call(arguments).pop();
+                // @param type {Integer}
+                // @param symbol {String}
+                // @param lots {Double}
+                // @param comment {String}
+                provider.createOrder({
+                    type: 0,
+                    symbol: 'eurUsd',
+                    lots: 0.01,
+                    comment: toString(provider.tid)
+                }, next);
             }
         ], done);
     });
 
     describe('#messageOrderInd', function() {
-        it('123', function() {
-            console.log(12, provider);
-
-        })
+        it('123', function(done) {
+            // socketMethods.messageOrderInd(provider, )
+            console.log(12, consumer1);
+            provider.getOrders(function(err, res) {
+                console.log(err, res);
+                done()
+            });
+        });
     });
 
 });

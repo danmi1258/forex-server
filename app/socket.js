@@ -103,6 +103,7 @@ function messageOrderInd(client, message, callback) {
 
         function(res, next) {
             diff = res;
+            console.log('>>', diff);
             async.eachSeries(diff.newOrders, createOrder.bind(this), next);
         },
 
@@ -151,7 +152,7 @@ module.exports.start = function start() {
         switch(message.type) {
 
             case messageTypes.ORDERS_IND:
-            console.log('new message received');
+            console.log('new message received', message);
             break;
 
             case messageTypes.ORDER_OPEN_REQ:
