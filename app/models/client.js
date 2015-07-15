@@ -140,10 +140,19 @@ Client.methods.changeToken = function(token, callback) {
 
 /*  Получить все подписки.
     ---------------------
-    Позволяет быстро получить все терминалы (в виде АПИ объектов) на которые подписан текущий терминал.
+    Позволяет быстро получить все терминалы провайдеры (в виде АПИ объектов) на которые подписан текущий терминал.
     */
 Client.methods.getSubscribtions = function(callback) {
     this.model('client').find({_id: {$in: this.subscriptions}}, callback);
+};
+
+
+/*  Получить всех подписчиков.
+    ---------------------
+    Позволяет быстро получить все терминалы консюмеры (в виде АПИ объектов) которые подписаны на данный терминал.
+    */
+Client.method.getSubscribers = function(callback) {
+    this.model('client').find({subscriptions: {$contains: this._id}}, callback);
 };
 
 

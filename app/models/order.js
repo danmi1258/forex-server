@@ -10,7 +10,7 @@ extend = require('mongoose-schema-extend');
  */
 var Order = BaseSchema.extend({
 	// аналог ID для терминала. Так как в терминале это единственный уникальный параметр для ордера.
-	ticket: {type: Number, require: true},
+	ticket: Number,
     // ID of the native terminal (Client)
     client: {type: String, require: true},
     // type of order's direct: buy, sell
