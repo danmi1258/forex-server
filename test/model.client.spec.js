@@ -2,6 +2,7 @@ var db = require('./vendor/db');
 var Client = require('../app/models/client');
 var async = require('async');
 var should = require('should');
+var config = require('config');
 
 
 describe('project model', function() {
@@ -32,7 +33,7 @@ describe('project model', function() {
 
         it('should create new client type of consumer', function (done) {
 
-            new Client({type: 'consumer', name: 'sdf'}).save(function (err, res) {
+            new Client({type: 'consumer', name: 'sdf', tid: '123456'}).save(function (err, res) {
                 if(err) {
                     console.error(err);
                     return;
@@ -189,6 +190,187 @@ describe('project model', function() {
 
         it('should not add new order for provier to open order list', function() {
             consumer.openOrders.length.should.be.equal(0);
+        });
+    });
+
+    
+    describe('#addToOrderHistory', function() {
+        var client, order;
+        
+        var values = {
+            ticket: 123,
+            type: 1,
+            symbol: 'eurUsd',
+            lots: 0.1,
+            comment: 'comment'
+        };
+
+        before(function(done) {
+            async.waterfall([
+                function(next) {
+                    Client.create({name: 'provider1', tid: '1', type: 'consumer'}, next);
+                },
+                function(res, next) {
+                    client = res;
+                    client.createOrder(values, next);
+                },
+                function(res, next) {
+                    order = res;
+                    next();
+                }
+            ], done);
+        });
+
+        it('should add new data to the order history', function(done) {
+            var ind = {
+                ticket: order.ticket,
+                profit: 1,
+                take_profit: 2,
+                swap: 3
+            };
+
+            client.addToOrderHistory(ind.ticket, ind, function(err, order) {
+                order.history[0].should.have.properties({
+                    profit: 1,
+                    takeProfit: 2,
+                    swap: 3
+                });
+                
+                should(order.history[0].time).be.ok;
+                done();
+            });
+        });
+
+        it('should not add new data to the order history', function(done) {
+            var ind = {
+                ticket: 1234,
+                profit: 2,
+                take_profit: 3,
+                swap: 4
+            };
+
+            client.addToOrderHistory(ind.ticket, ind, function(err, order) {
+                err.message.should.be.equal('[Client #addHistory] error: requested order was not found');
+                done();
+            });
+        });
+    });
+
+    describe('#terminal message handler', function() {
+        var provider1, provider2, consumer1, consumer11, consumer2;
+
+        var values = {
+            type: 1,
+            symbol: 'eurUsd',
+            lots: 0.01,
+            comment: 'comment'
+        };
+
+        function getRandom() {
+            return Math.floor(Math.random()*1000*1000);
+        }
+
+        beforeEach(function(done) {
+            async.waterfall([
+                function(next) {
+                    Client.create({name: 'provider1_' + getRandom(), tid: getRandom(), type: 'provider'}, next);
+                },
+                function(res, next) {
+                    provider1 = res;
+                    Client.create({name: 'provider2_' + getRandom(), tid: getRandom(), type: 'provider'}, next);
+                },
+                function(res, next) {
+                    provider2 = res;
+                    Client.create({name: 'consumer1_' + getRandom(), tid: getRandom(), type: 'consumer'}, next);
+                },
+                function(res, next) {
+                    consumer1 = res;
+                    Client.create({name: 'consumer11_' + getRandom(), tid: getRandom(), type: 'consumer'}, next);
+                },
+                function(res, next) {
+                    consumer11 = res;
+                    Client.create({name: 'consumer2_' + + getRandom(), tid: getRandom(), type: 'consumer'}, next);
+                },
+                function(res, next) {
+                    consumer2 = res;
+
+                    async.series([
+                        function(_next) {
+                            consumer1.subscribe(provider1, _next);
+                        },
+                        function(_next) {
+                            consumer11.subscribe(provider1, _next);
+                        },
+                        function(_next) {
+                            consumer2.subscribe(provider2, _next);
+                        }
+                    ], next);
+                }
+            ], done);
+        });
+        
+        describe('#createOrderAnalitic', function() {
+            it('should create new order and responce should have been expanded', function(done) {
+                consumer1.createOrderAnalitic(values, function(err, res) {
+
+                    res.should.have.keys('data', 'order');
+                    
+                    res.data.should.have.properties({
+                        type: values.type,
+                        symbol: 'eurUsd',
+                        lots: 1,
+                        comment: 'comment',
+                        ticket: null
+                     });
+
+                    res.order.should.have.properties({
+                        _title: 'order',
+                        type: values.type,
+                        symbol: values.symbol,
+                        lots: values.lots,
+                        ticket: null,
+                        client: consumer1._id.toString(),
+                        state: config.orderStates.CREATING
+                    });
+
+                    res.order.history.should.be.an.Array;
+
+                    done();
+                });
+            });
+        });
+
+        describe('#_handleProviderNewOrders', function() {
+            it('should create order for both subscribers', function(done) {
+                provider1._handleProviderNewOrders(values, function(err, res) {
+                    res.should.be.an.Array;
+                    res.length.should.be.equal(2);
+                    res[0].should.have.keys('subscriber', 'tid', 'order', 'action', 'data');
+                    res[0].should.have.properties({
+                        tid: consumer1.tid,
+                        action: 'create'
+                    });
+
+                    res[1].should.have.properties({
+                        tid: consumer11.tid,
+                        action: 'create'
+                    });
+
+                    done();
+                });
+            });
+        });
+
+        describe('#_handleProviderClosedOrders', function() {
+            it('should close order for all subscriber with status CLOSING', function(done) {
+                provider1._handleProviderNewOrders(values, function(err, res) {
+                    provider1.checkOnChange([], function(err, _res) {
+
+                    console.log(err, _res);
+                    done();
+                    })
+                })
+            });
         });
     });
 });

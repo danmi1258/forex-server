@@ -92,10 +92,11 @@
     <pre class="code prettyprint linenums">
 var mongoose = require(&#x27;mongoose&#x27;);
 var BaseSchema = require(&#x27;./base&#x27;);
-var confing = require(&#x27;confing&#x27;);
-var sockets = require(&#x27;../middleware/socket&#x27;);
+var config = require(&#x27;config&#x27;);
+var orderStates = config.orderStates;
 var _ = require(&#x27;underscore&#x27;);
 var Order = require(&#x27;./order&#x27;);
+var async = require(&#x27;async&#x27;);
 
 
 // !! not var. set is as global;
@@ -103,11 +104,12 @@ extend = require(&#x27;mongoose-schema-extend&#x27;);
 
 
 /**
- * @class Client
- * @extends Default
+    @class Client
+    @extends Default
+
+    @property name {String}
  */
 var Client = BaseSchema.extend({
-    /* - */
     name: String,
     /* ids of a terminal-providers */
     subscriptions: Array,
@@ -126,48 +128,48 @@ var Client = BaseSchema.extend({
     type: String
 });
 
-Client.statics.getSubscribtionHash = function() {
-    return {
-        _id: null,
-        volume: 0.01
-    }
-};
 
 /* create new terminal */
 Client.statics.create = function(data, callback) {
-   var Terminal = this;
 
-   if (!data.name || !data.tid || !data.type) return callback(new Error(&#x27;data error&#x27;));
+    var Terminal = this;
 
-   var terminal = new Terminal(data);
+    if (!data.name || !data.tid || !data.type) {
+        callback(new Error(&#x27;argument data error&#x27;));
+        return;
+    }
 
+    if (config.allowedTerminalTypes.indexOf(data.type) === -1) {
+        callback(new Error(&#x27;not allowed terminal type&#x27;));
+        return;
+    }
 
-   terminal.save(callback);
+    new Terminal(data).save(function(err, res) {
+        callback(err, res);
+    });
 };
 
 
-/*  Сообщение через сокет
-    ---------------------
-    Метод отсылает сообщение через сокет на терминал. Если открытого сокета для данного терминала не найдено 
-    (терминал не имеет активного соединения), вернется ошибка.
-*/
-Client.methods.sendMessage = function(message, callback) {
-    var socket = sockets.getSocket(this.tid);
-    if (!socket) callback(&#x27;socket not found&#x27;); return;
-    
-    sockets.server.send(socket, message);
-    callback(null);
+Client.statics.getByTid = function(tid, callback) {
+    this.findOne({tid: tid}, function(err, res) {
+        if (err) {
+            callback(err);
+            return;
+        }
+        callback(null, res);
+    });
 };
+
 
 
 Client.methods.alreadySubscribed = function(provider) {
-    return this.subscriptions.indexOf(provider._id) != -1;
+    return this.subscriptions.indexOf(provider._id) !== -1;
 };
 
 
-/** 
+/**
     @method subscribe
-    @description Пописаться  
+    @description Пописаться
     =======================
 
     Метод подписывает один терминал на другой. Подписаться можно только на терминал с типом провайдер.
@@ -176,16 +178,28 @@ Client.methods.alreadySubscribed = function(provider) {
     @return {object} - instance of Order
 **/
 Client.methods.subscribe = function(provider, callback) {
-    if (provider.type != &#x27;provider&#x27;) return callback(401);
-    if (this.alreadySubscribed(provider)) return callback(401);
+    var _err;
+
+    if (provider.type != &#x27;provider&#x27;) {
+        _err = new Error(&#x27;[Client #subscribe] error: it is forbidden subscribe on the client with no provider type&#x27;);
+        callback(_err);
+        return;
+    }
+    if (this.alreadySubscribed(provider)) {
+        _err = new Error(&#x27;[Client #subscribe] error: subscriptions already exist&#x27;);
+        callback(_err);
+        return;
+    }
 
     this.subscriptions.push(provider._id);
-    this.save(callback);
+    this.save(function(err, client) {
+        callback(err, client);
+    });
 };
 
 
-/** 
-    @async 
+/**
+    @async
     @method unsubscribe
     @description Одписаться
     =======================
@@ -203,7 +217,7 @@ Client.methods.unsubscribe = function(provider, callback) {
     this.save(callback);
 };
 
-/** 
+/**
     @async
     @method changeToken
     @description Изменить токен
@@ -231,10 +245,19 @@ Client.methods.changeToken = function(token, callback) {
 
 /*  Получить все подписки.
     ---------------------
-    Позволяет быстро получить все терминалы (в виде АПИ объектов) на которые подписан текущий терминал.
+    Позволяет быстро получить все терминалы провайдеры (в виде АПИ объектов) на которые подписан текущий терминал.
     */
 Client.methods.getSubscribtions = function(callback) {
-    this.find({subscriptions: {$in: this.subscriptions}}, callback);
+    this.model(&#x27;client&#x27;).find({_id: {$in: this.subscriptions}}, callback);
+};
+
+
+/*  Получить всех подписчиков.
+    ---------------------
+    Позволяет быстро получить все терминалы консюмеры (в виде АПИ объектов) которые подписаны на данный терминал.
+    */
+Client.methods.getSubscribers = function(callback) {
+    this.model(&#x27;client&#x27;).find({subscriptions: this._id}, callback);
 };
 
 
@@ -250,33 +273,84 @@ Client.methods.setPause = function() {};
 ##################################
 */
 
-var orderTypes = confing.orderTypes;
+
+
+
 
 /** @async
-    @method createOrder 
+    @method createOrder
     @description Создать запись о новом ордере
     ==========================================
     
     Методы создает новую запись в таблице orders, привязывая его к текущему клиенту.
-    Также метод делает уведомление по сокету своему терминалу с приказом об открытии нового ордера.
 
-    sИспользуйте этот метод, когда хотите инициировать создание нового ордера со стороны сервера.
+    Используйте этот метод, когда хотите инициировать создание нового ордера со стороны сервера.
 
     @param values {object} - данные для создания нового ордера
+        @property type {Integer}
+        @required
+        @property symbol {String}
+        @required
+        @property lots {Double}
+        @required
+        @property comment {String}
+        @required
+        @property ticket {Integer}
+    @param _options {Object}
+        @ property confirm {Boolean} - if true then order will be confirmed imediatly
     @param callback {function}
     @return {err, object} err, order
 **/
-Client.methods.createOrder = function(values, callback) {
-    values.status = orderTypes.CREATING;
+Client.methods.createOrder = function(_values, _options, callback) {
+    
+    if (arguments.length === 2) {
+        callback = arguments[1];
+        _options = null;
+    }
+
+    var values = _.clone(_values);
+    
+    var requiredParams = {
+        type: &#x27;number&#x27;,
+        symbol: &#x27;string&#x27;,
+        lots: &#x27;number&#x27;,
+        comment: &#x27;string&#x27;
+    };
+
+    var keys = Object.keys(requiredParams);
+    var self = this;
+
+    // validate for required properties
+    for (var i = 0; i &lt; keys.length; i++) {
+        var key = keys[i];
+
+        if (values[key] === undefined || typeof values[key] !== requiredParams[key]) {
+            callback(new Error(&#x27;bad param @values&#x27;));
+            return;
+        }
+    }
+
+    // validate for the options complience
+    if (_options &amp;&amp; _options.confirm &amp;&amp; !values.ticket) {
+        console.log(&#x27;warning! try to set order as confirmed but order.ticket does not specified... &#x27;);
+    }
+
+    values.state = orderStates.CREATING;
     values.client = this._id;
     
-    client.sendMessage({
-        type: &#x27;&#x27;, // todo определить тип сообщения
-        data: {/* order values */} 
-    });
-
-    new Order(values).save(callback);
-
+    async.waterfall([
+        function (next) {
+            new Order(values).save(next);
+        },
+        function(order, num, next) {
+            if (_options &amp;&amp; _options.confirm) {
+                self.confirmOrderCreation(order, next);
+                return;
+            }
+            next(null, order);
+        }
+    ], callback);
+    
 };
 
 
@@ -286,56 +360,179 @@ Client.methods.createOrder = function(values, callback) {
     Метод подтверждает открытие ордера в терминале.
     * Используйте этот метод, когда надо подтвердить факт, действительно ли ордер был открыт в терминале.
     
-    @prop orderTime {Date} - время создания ордера в терминалом. Аналог ID
-    @return {object} - объект ордера как модель Order
+    @prop orderTicket {Date} - время создания ордера в терминалом. Аналог ID
+    @return {object} - Order
 */
-Client.methods.confirmOrderCreation = function(orderTime, callback) {
-    Order.getByTime(orderTime, function(err, order) {
-        if (err) return callback(err);
-        
-        order.status = orderTypes.CREATED;
-        order.openedOn: new Date().getTime();
-        order.save(callback);
-    })
+Client.methods.confirmOrderCreation = function(orderTicket, callback) {
+    
+    var self = this;
+
+    async.waterfall([
+        // get order
+        function (next) {
+            if (orderTicket._id) {
+                next(null, orderTicket);
+                return;
+            }
+
+            Order.getByTicket(orderTicket, next);
+        },
+        // modify order status &amp; openTime
+        function (order, next) {
+            order.state = orderStates.CREATED;
+            order.openedOn = new Date().getTime();
+            order.save(next);
+        },
+        // add orderId to client @openOrders
+        function (order, num, next) {
+            self.openOrders.push(order._id);
+            self.save(function(err) {
+                next(err, order);
+            });
+        }
+    ], callback);
 };
 
-Client.methods.closeOrder = function(orderTime) {
-    Order.getByTime(orderTime, function(err, order) {
-        if (err) return callback(err);
+/**
+    @method closeOrder
+    @param orderTicket {Integer}
+    @param _options {Object}
+        @property confirm {Boolean} - if true then order closing will be confirmed imediatly
+    @param callback {Function} arg: err, order
+*/
+Client.methods.closeOrder = function(orderTicket, _options, callback) {
 
-        client.sendMessage({
-            type: &#x27;&#x27;, //todo определить тип сообщения
-            data: {orderTime: orderTime}
-        });
+    if (arguments.length === 2) {
+        callback = arguments[1];
+        _options = null;
+    }
 
-        order.status = orderTime.CLOSING;
-        order.save(callback);
-    })
-};
+    var self = this;
 
+    async.waterfall([
+        function(next) {
+            if (orderTicket._id) {
+                next(null, orderTicket);
+                return;
+            }
 
-Client.method.confirmOrderClosing = function(orderTime) {
-    Order.getByTime(orderTime, function(err, order) {
-        if (err) return callback(err);
+            Order.getByTicket(orderTicket, next);
+        },
+        function(order, next) {
+            order.state = orderStates.CLOSING;
+            order.save(next);
+        },
+        function(order, num, next) {
+            if (_options.confirm) {
+                self.confirmOrderClosing(order, next);
+            } else {
+                next(null, order);
+            }
+        }
+    ], callback);
 
-        order.status = orederTime.CLOSED;
-        order.closedOn = new Date().getTime();
+    Order.getByTicket(orderTicket, function(err, order) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        order.state = orderStates.CLOSING;
         order.save(callback);
     });
 };
 
 
-/*  Получает список открытых ордеров.
-    ==================================
-    @return {Array} - список открытых ордеров в виде объектов модели Order
+Client.methods.confirmOrderClosing = function(orderTicket, callback) {
 
-*/
-Client.methods.getOpenOrders = function(callback) {
-    this.find({ client: this._id, _id: {$in: this.openOrders }}, function(err, res) {
-        if (err) callback(err); return;
-        callback(null, res);
-    })
+    var self = this;
+
+    async.waterfall([
+        function(next) {
+            if (orderTicket._id) {
+                next(null, orderTicket);
+                return;
+            }
+
+            Order.getByTicket(orderTicket, next);
+        },
+        function(order, next) {
+            order.state = orderStates.CLOSED;
+            order.closedOn = new Date().getTime();
+            order.save(next);
+        },
+        function(order, num, next) {
+            var index = self.openOrders(order._id);
+            if (index !== -1) {
+                self.splice(index, 1);
+                self.save(function(err) {
+                    next(err, order);
+                });
+            }
+            else {
+                console.log(&#x27;WARNING!!! try to remove open order id from openOrder list, but it was not founded&#x27;);
+                next(null, order);
+            }
+        }
+    ], callback);
 };
+
+
+/**
+    Получить список ордеров.
+    ========================
+    
+    Получает список всех ордеров, закрепленных за данным ордером.
+
+    Возможна фильтрация по статусу (состоянию) ордера. Статусы передаются в опциях в виде массива.
+    Если статусы не переданы, вернет список всех ордеров.
+    
+
+    @example
+
+        client.getOrders({states: [11,12]}, function(err, res) {
+            //... res will be all arders with statuses opening (11), opened (12);
+        })
+    
+    @method getOrders
+    @param [_options] {object}
+        @param {Array} _options.states -список статусов для фильтрации
+    @param callback {function}
+        @param {Error} callback.err
+        @param {Array} callback.orders
+*/
+Client.methods.getOrders = function(_options, callback) {
+    var options = arguments.length === 2 ? arguments[0] : {};
+    callback = Array.prototype.slice.call(arguments).pop();
+    callback = _.isFunction(callback) ? callback : Function;
+
+    var query = {
+        client: this._id
+    };
+
+    if (options.states &amp;&amp; _.isArray(options.states)) {
+        query.states = {$in: options.states};
+    }
+
+    this.model(&#x27;client&#x27;).find(query, callback);
+};
+
+
+Client.methods.getOrderByTicket = function(ticket, _options, callback) {
+    var options = arguments.length === 3 ? arguments[1] : {};
+    callback = Array.prototype.slice.call(arguments).pop();
+    callback = _.isFunction(callback) ? callback : Function;
+
+    Order.findOne({client: this._id, ticket: ticket}, function(err, res) {
+        if(err) {
+            callback(err);
+            return;
+        }
+
+        callback(null, res);
+    });
+};
+
 
 /*  Проверка на наличине открытых ордеров
     -------------------------------------
@@ -350,36 +547,41 @@ Client.methods.hasOpenOrders = function() {
     @description Сверить ордера
     ===========================
 
-    Метод получает список открытых позиций и сравнивает с уже открытыми. 
+    Метод получает список открытых позиций и сравнивает с уже открытыми.
     Возвращает информацию с отличиями.
     
-    хэш сообщения от терминала orderList 
+    хэш сообщения от терминала orderList (message.data)
     ------------------------------------
 
-        orderList = [{
-        orederOpenTime,
-        orderSymbol,
-        orderType,
-        orderProfit,
-        tid,
-        client   
+    orderList = [{
+        symbol: String,
+        type: Number (Int),
+        lots: Number (double)
+        open-time: Number (Int timestamp linux)
+        open-price: Number (Double)
+        swap: Number (Double)
+        profit: Number (Int)
+        take-profit: Number (Int)
     }]
 
     res: возвращаемые данные
     ------------------------
 
-    * @property newOrders {Array} - список новых ордеров в виде объектов типа Order _[order, ...]_
-    * closedOrders* {Array} - список закрытых ордеров в виде объектов типа Order _[order, ...]_
+    @property newOrders {Array} - список новых ордеров в виде объектов типа Order _[order, ...]_
+    @property closedOrders* {Array} - список закрытых ордеров в виде объектов типа Order _[order, ...]_
     
+
     @param orderList {object} see description orderList
     @param callback {function (err, res) } see res
 **/
 Client.methods.checkOnChange = function(orderList, callback) {
  
-
     //  запрос списка открытых ордеров, принадлежащих данному клиенту.
-    this.getOpenOrders(function(err, orders) {
-        if (err) callback(err); return;
+    this.getOrders({states: [config.orderStates.CREATED]}, function(err, orders) {
+        if (err) {
+            callback(err);
+            return;
+        }
 
         var ordersTIDs = _.pluck(orders, &#x27;tid&#x27;);
         var ordersListTIDs = _.pluck(orderList, &#x27;tid&#x27;);
@@ -388,23 +590,303 @@ Client.methods.checkOnChange = function(orderList, callback) {
         // список ордеров, которые были созданы с момента последнего обращения
         if (ordersTIDs.length){
             newOrders = _.filter(orderList, function(e) {
-                return ordersTIDs.indexOf(e.tid) == -1;
-            })    
+                return ordersTIDs.indexOf(e.tid) === -1;
+            });
         }
 
         // список ордеров, которые были закрыты с момента последнего обращения
         if (ordersListTIDs) {
-            var closedOrders = _.filter(orders, function(e) {
-                return ordersListTIDs.indexOf(e.tid) == -1; 
-            })    
+            closedOrders = _.filter(orders, function(e) {
+                return ordersListTIDs.indexOf(e.tid) === -1;
+            });
         }
 
         callback(null, {newOrders: newOrders, closedOrders: closedOrders});
-    })
+    });
+};
+
+
+/* 1.a проверит новые и закрытые ордера
+    2. откроет новые для провайдера
+    3. закроет закрытые для провайдера
+    4. возьмет всех подписчиков
+    5. откроет не подтвержденные ордера для подписчиков
+    6. закроет не подтвержденные ордера для подписчиков
+    7. вернет данные в формате:
+        [{
+            subscriber: {Client},
+            tid: Client.tid,
+            action: create|close,
+            data: {
+                ticket: action create ? null: Order.ticket
+                type
+                symbol
+                lots
+                comment
+            }
+        }]
+
+    1.b если нет ордеров
+        1. добавит инфу в историю */
+Client.methods.handleProviderTerminalMessage = function(message, callback) {
+
+    var self = this;
+    var res = [];
+    var changes = null;
+
+    async.waterfall([
+        function (next) {
+            self.addToOrderHistory(message, next.bind(this, null));
+        },
+        function (next) {
+            next = arguments[arguments.length - 1];
+            self.checkOnChange(message, next);
+        },
+        function (_res, next) {
+            changes = _res;
+
+            if (!changes.newOrders.length &amp;&amp; !changes.closedOrders.length) {
+                callback(null, res);
+                return;
+            }
+
+            self._handleProviderNewOrders(changes.newOrders, next);
+        },
+        function (_res, next) {
+            res.concate(_res);
+            self._handeProviderClosedOrder(changes.closedOrders, next);
+        },
+        function (_res, next) {
+            res.concate(_res);
+            next(null, res);
+        }
+    ], callback);
+};
+
+
+/* Получает список закрытых ордеров Order, берет всех подписчиков и и для каждого
+создает распоряжение на новый ордер.
+Возвращает данные в виде:
+
+[{
+            subscriber: {Client},
+            order: {order},
+            tid: Client.tid,
+            action: create,
+            data: {
+                ticket: null
+                type
+                symbol
+                lots
+                comment
+            }
+        }]
+
+*/
+Client.methods._handleProviderClosedOrders = function(orders, callback) {
+    var self = this;
+    var res = [];
+
+    function _handleEachOrderClose(client, order, done) {
+        client.closeOrder(order.ticket, function(err, _order) {
+            if (err) {
+                console.error(&#x27;[Client #_handleProviderClosedOrders] order not found error&#x27;);
+                done();
+                return;
+            }
+
+            var _res = {
+                subscriber: client,
+                order: _order,
+                tid: client.tid,
+                action: &#x27;close&#x27;,
+                data: {
+                    ticket: order.ticket
+                }
+            };
+
+            res.push(_res);
+            done(null, res);
+        });
+    }
+
+    function _handleEachSubscriber(client, done) {
+        async.eachSeries(orders, _handleEachOrderClose.bind(this, client), done);
+    }
+
+    async.waterfall([
+        function (next) {
+            self.getSubscribers(next);
+        },
+        function (subscribers, next) {
+            if (!subscribers.length) {
+                callback(null, res);
+                return;
+            }
+
+            async.eachSeries(subscribers, _handleEachSubscriber.bind(this), next);
+        }
+    ], callback);
+};
+
+
+/**
+data see:  #handleProviderTerminalMessage arg message or data
+
+анализирует состояние запроса, в зависимости от решения открывает сделку
+
+@method: createOrderAnalitic
+@param data {Object} plain terminal message
+@param callback {Function}
+Возвращает инфу в виде:
+{
+    order: {Order},
+    data: {
+        ticket: null,
+        type
+        symbol
+        lots
+        comment
+    }
+}
+*/
+Client.methods.createOrderAnalitic = function(data, callback) {
+
+    if (this.type === &#x27;provider&#x27;) {
+        var err = &#x27;[Client #createOrderAnalitic] protected. Try to create order for provider.&#x27;;
+        console.error(new Error(err));
+        callback(err);
+        return;
+    }
+     // todo сделать вычисление лота на основе данных клиента.
+    data.ticket = null;
+    data.lots = 1;
+
+    this.createOrder(data, function(_err, order) {
+        if (err) {
+            console.error(&#x27;[Client #createOrderAnalitic]:&#x27;, _err);
+            callback(_err);
+            return;
+        }
+
+        var res = {
+            order: order,
+            data: data
+        };
+
+        callback(null, res);
+    });
+};
+
+
+/** 
+Получает дату от терминала. Получает всех подписчиков и для каждого подписчика
+вызывает метод #createOrderAnalitic
+Ответ в виде:
+
+[{
+    subscriber: {Client},
+    tid: client.tid,
+    order: {Order},
+    action: &quot;create&quot;,
+    data: {
+        ticket: null
+        type
+        symbol
+        lots
+        comment
+    }
+}]
+    @method _handleProviderNewOrders
+    @param data {Object} plain terminal message
+*/
+Client.methods._handleProviderNewOrders = function(data, callback) {
+
+    var self = this;
+    var res = [];
+
+    function _handleEach(client, done) {
+        client.createOrderAnalitic(data, function(err, _data) {
+            if (err) {
+                console.log(&#x27;[Client #_handleProviderNewOrders] &#x27;, err);
+                done(null);
+                return;
+            }
+            
+            _data.subscriber = client;
+            _data.tid = client.tid;
+            _data.action = &#x27;create&#x27;;
+
+            res.push(_data);
+            done(null, res);
+        });
+    }
+
+    async.waterfall([
+        // query subscribers
+        function (next) {
+            self.getSubscribers(next);
+        },
+        function (subscribers, next) {
+            if (!subscribers.length) {
+                next(null, []);
+                return;
+            }
+
+            async.eachSeries(subscribers, _handleEach.bind(this), next);
+        }
+    ], function(err) {
+        callback(err, res);
+    });
+};
+
+
+/* Обрабатывает данные о текущих ордерах в терминале */
+Client.methods.handleConsumerTerminalMessage = function(message, callback) {
+
+};
+
+
+/* Добавляет в историю торговли данные о сделке */
+Client.methods.addToOrderHistory = function(ticket, message, callback) {
+    var self = this;
+
+    async.waterfall([
+        function (next) {
+            self.getOrderByTicket(ticket, next);
+        },
+        function (order, next) {
+            if (!order) {
+                var _err = new Error(&#x27;[Client #addHistory] error: requested order was not found&#x27;);
+                console.error(_err);
+                next(_err);
+                return;
+            }
+
+            var values = {
+                profit: message.profit,
+                takeProfit: message.take_profit,
+                swap: message.swap,
+                time: new Date().getTime()
+            };
+
+            order.history.push(values);
+
+            order.save(function(err, _order) {
+                if (err) {
+                    next(err);
+                    return;
+                }
+
+                next(null, _order);
+            });
+        }
+    ], callback);
 };
 
 
 module.exports = mongoose.model(&#x27;client&#x27;, Client);
+
     </pre>
 </div>
 

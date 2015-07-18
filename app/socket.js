@@ -87,106 +87,107 @@ function messageBindReq(socket, message) {
 
 function handlerMessageForProvider(client, message, callback) {
 
-    var changedOrderInfo, subscribers;
+    callback(null);
+    // var changedOrderInfo, subscribers;
 
-    function createOrderDecorator(_clients, options, values, done) {
-        if (_.isObject(_clients)) {
-            _clients = [_clients];
-        };
+    // function createOrderDecorator(_clients, options, values, done) {
+    //     if (_.isObject(_clients)) {
+    //         _clients = [_clients];
+    //     };
 
-        function createOrder(client, next) {
-            if (client.type === 'provider') {
-                // создать ордер с confirm = true
-            }
+    //     function createOrder(client, next) {
+    //         if (client.type === 'provider') {
+    //             // создать ордер с confirm = true
+    //         }
 
-            if (client.type === 'consumer') {
-                // создать ордер с confirm == false
-                // после послать сигнал на терминал.
+    //         if (client.type === 'consumer') {
+    //             // создать ордер с confirm == false
+    //             // после послать сигнал на терминал.
 
-            }
-        }
+    //         }
+    //     }
 
-        async.eachSeries(_clients, createOrder, done);
-    }
-
-
-    function closeOrderDecorator(_clients, options, values, done) {
-
-        // !!!!!!! refactor as createOrderDecorator
-        _client.createOrder(values, options, done);
-    }
+    //     async.eachSeries(_clients, createOrder, done);
+    // }
 
 
+    // function closeOrderDecorator(_clients, options, values, done) {
 
-    async.series([
-        // получить различия
-        function (next) {
-            client.checkOnChange(message.data, function(err, res) {
-                if (err) {
-                    return next(err);
-                }
+    //     // !!!!!!! refactor as createOrderDecorator
+    //     _client.createOrder(values, options, done);
+    // }
 
-                if (!res.newOrders.length && !res.closedOrders.length) {
-                    // breack series with OK
-                    return next('ok');
-                }
 
-                changedOrderInfo = res;
-            });
-        },
 
-        // Создать открытые ордера для провайдера
-        function (next) {
-            if (!res.newOrders.length) {
-                return next();
-            }
+    // async.series([
+    //     // получить различия
+    //     function (next) {
+    //         client.checkOnChange(message.data, function(err, res) {
+    //             if (err) {
+    //                 return next(err);
+    //             }
 
-            var options = {confirm: true};
-            async.eachSeries(changedOrderInfo.newOrders, createOrderDecorator.bind(this, client, options), next);
-        },
+    //             if (!res.newOrders.length && !res.closedOrders.length) {
+    //                 // breack series with OK
+    //                 return next('ok');
+    //             }
 
-        // создать закрытые ордера для провайдера
-        function (next) {
-            if (!res.closedOrders.length) {
-                return next();
-            }
+    //             changedOrderInfo = res;
+    //         });
+    //     },
 
-            var options = {confirm: true};
-            async.eachSeries(changedOrderInfo.closedOrders, createOrderDecorator.bind(this, client, options), next);
+    //     // Создать открытые ордера для провайдера
+    //     function (next) {
+    //         if (!res.newOrders.length) {
+    //             return next();
+    //         }
 
-        },
-        // получить всех подписчиков
-        function (next) {
-            Client.getSubscribers(function (err, res) {
-                if (err) {
-                    return next(err);
-                }
+    //         var options = {confirm: true};
+    //         async.eachSeries(changedOrderInfo.newOrders, createOrderDecorator.bind(this, client, options), next);
+    //     },
 
-                subscribers = res;
-                if (!subscribers.length) {
-                    return next('ok');
-                }
+    //     // создать закрытые ордера для провайдера
+    //     function (next) {
+    //         if (!res.closedOrders.length) {
+    //             return next();
+    //         }
 
-                next();
-            });
-        },
+    //         var options = {confirm: true};
+    //         async.eachSeries(changedOrderInfo.closedOrders, createOrderDecorator.bind(this, client, options), next);
+
+    //     },
+    //     // получить всех подписчиков
+    //     function (next) {
+    //         Client.getSubscribers(function (err, res) {
+    //             if (err) {
+    //                 return next(err);
+    //             }
+
+    //             subscribers = res;
+    //             if (!subscribers.length) {
+    //                 return next('ok');
+    //             }
+
+    //             next();
+    //         });
+    //     },
         
-        // обработать открытые ордера для подписчиков
-        function (next) {
-            async.eachSeries(subscribers, createOrderDecorator.bind(this, ), next);
-        },
+    //     // обработать открытые ордера для подписчиков
+    //     function (next) {
+    //         async.eachSeries(subscribers, createOrderDecorator.bind(this, ), next);
+    //     },
 
-        // обработать закрытые ордера для подписчиков
-        function (next) {
+    //     // обработать закрытые ордера для подписчиков
+    //     function (next) {
 
-        }
-    ], function(err) {
-        if (!err || err === 'ok') {
-            return callback();
-        }
+    //     }
+    // ], function(err) {
+    //     if (!err || err === 'ok') {
+    //         return callback();
+    //     }
 
-        return callback(err);
-    });
+    //     return callback(err);
+    // });
 }
 
 function handlerMessageForConsumer() {
