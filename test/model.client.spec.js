@@ -4,6 +4,9 @@ var async = require('async');
 var should = require('should');
 var config = require('config');
 
+function getRandom() {
+    return Math.floor(Math.random()*1000*1000);
+}
 
 describe('project model', function() {
 
@@ -65,6 +68,8 @@ describe('project model', function() {
                 done();
             });
         });
+
+
     });
 
     describe('#unsubscribe', function() {
@@ -255,6 +260,101 @@ describe('project model', function() {
             });
         });
     });
+  
+
+
+
+    describe('#checkOnChange', function() {
+        var provider, order;
+
+        var messages = [{
+                    ticket: 123,
+                    type: 1,
+                    symbol: 'eurUsd',
+                    lots: 0.01,
+                    comment: 'first'
+                },
+                {
+                    ticket: 456,
+                    type: 1,
+                    symbol: 'eurUsd',
+                    lots: 0.01,
+                    comment: 'second'
+                }];
+
+        before(function(done) {
+            var values = {
+                name: getRandom(),
+                tid: getRandom(),
+                 type: 'provider'
+            };
+
+            Client.create(values, function(err, res) {
+                provider = res;
+                done();
+            });
+        });
+
+        it('#should return new orders', function(done) {
+            provider.checkOnChange(messages, function(err, res) {
+                res.newOrders.length.should.be.equal(2);
+                res.newOrders[0].should.have.properties({
+                    ticket: 123,
+                    type: 1,
+                    symbol: 'eurUsd',
+                    lots: 0.01,
+                    comment: 'first'
+                });
+
+                done();
+            });
+        });
+
+        it('should return one new order', function(done) {
+            provider.createOrder(messages[0], {confirm: true}, function(err, _order) {
+                order = _order;
+
+                provider.checkOnChange(messages, function(err, res) {
+                    res.newOrders.length.should.be.equal(1);
+                    
+                    res.newOrders[0].should.have.properties({
+                        ticket: 456,
+                        type: 1,
+                        symbol: 'eurUsd',
+                        lots: 0.01,
+                        comment: 'second'
+                    });
+
+                   done();
+                });
+            });
+        });
+
+        it('should return one new order and one closed order', function(done) {
+            messages.splice(0,1);
+            provider.checkOnChange(messages, function(err,res) {
+                res.newOrders.length.should.be.equal(1);
+                res.closedOrders.length.should.be.equal(1);
+                res.newOrders[0].should.have.properties({
+                        ticket: 456,
+                        type: 1,
+                        symbol: 'eurUsd',
+                        lots: 0.01,
+                        comment: 'second'
+                    });
+
+                res.closedOrders[0].should.have.properties({
+                    _title: 'order',
+                    client: provider._id.toString()
+                });
+
+                done();
+            });
+        });
+
+    });
+
+
 
     describe('#terminal message handler', function() {
         var provider1, provider2, consumer1, consumer11, consumer2;
@@ -266,9 +366,7 @@ describe('project model', function() {
             comment: 'comment'
         };
 
-        function getRandom() {
-            return Math.floor(Math.random()*1000*1000);
-        }
+        
 
         beforeEach(function(done) {
             async.waterfall([
@@ -311,6 +409,8 @@ describe('project model', function() {
         
         describe('#createOrderAnalitic', function() {
             it('should create new order and responce should have been expanded', function(done) {
+
+
                 consumer1.createOrderAnalitic(values, function(err, res) {
 
                     res.should.have.keys('data', 'order');
@@ -342,19 +442,19 @@ describe('project model', function() {
 
         describe('#_handleProviderNewOrders', function() {
             it('should create order for both subscribers', function(done) {
-                provider1._handleProviderNewOrders(values, function(err, res) {
+                var _order = {
+                    ticket: 123,
+                    type: 1,
+                    symbol: 'eurUsd',
+                    lots: 0.01,
+                    comment: 'comment'
+                };
+
+                provider1._handleProviderNewOrders([_order], function(err, res) {
                     res.should.be.an.Array;
                     res.length.should.be.equal(2);
                     res[0].should.have.keys('subscriber', 'tid', 'order', 'action', 'data');
-                    res[0].should.have.properties({
-                        tid: consumer1.tid,
-                        action: 'create'
-                    });
-
-                    res[1].should.have.properties({
-                        tid: consumer11.tid,
-                        action: 'create'
-                    });
+                    res[1].should.have.keys('subscriber', 'tid', 'order', 'action', 'data');
 
                     done();
                 });
@@ -362,14 +462,49 @@ describe('project model', function() {
         });
 
         describe('#_handleProviderClosedOrders', function() {
-            it('should close order for all subscriber with status CLOSING', function(done) {
-                provider1._handleProviderNewOrders(values, function(err, res) {
-                    provider1.checkOnChange([], function(err, _res) {
+            it('should close order with status CLOSING for all subscriber', function(done) {
+                var _order = {
+                    ticket: 123,
+                    type: 1,
+                    symbol: 'eurUsd',
+                    lots: 0.01,
+                    comment: 'comment'
+                };
 
-                    console.log(err, _res);
+                consumer1.createOrder(_order, function(err, order) {
+
+                    console.log('consumer1_id', consumer1._id.toString());
+                    // provider1.getSubscribers(function(err, res) {
+                    //     console.log(err, res);
+                    //     done()
+                    // })
+                    provider1._handleProviderClosedOrders([order], function(err, res) {
+                        res.length.should.be.equal(1);
+                        res[0].order.state.should.be.equal(config.orderStates.CLOSING);
+                        done();
+                    });
+                });
+            });
+        });
+
+
+        describe('#handleProviderTerminalMessage', function() {
+            it('should create new orders for each subscriber', function(done) {
+                var _order = {
+                    ticket: 123,
+                    type: 1,
+                    symbol: 'eurUsd',
+                    lots: 0.01,
+                    comment: 'comment'
+                };
+
+                provider1.handleProviderTerminalMessage([_order], function(err, res) {
+                    console.log(res);
+                    res.length.should.be.equal(2);
+                    res[0].action.should.be.equal('create');
+                    res[1].action.should.be.equal('create');
                     done();
-                    })
-                })
+                });
             });
         });
     });

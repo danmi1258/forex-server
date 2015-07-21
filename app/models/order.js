@@ -40,14 +40,24 @@ var Order = BaseSchema.extend({
 @return {order} - искомый объект ордера.
 */
 Order.statics.getByTicket = function(orderTicket, callback) {
-	this.find({ticket: orderTicket}, function(err, res) {
-		if (err) return callback(err);
-		if (res.length > 1) callback(new Error('500, найдено несколько ордеров по уникальному параметру orderTime'));
-		if (res.length < 1) callback(new Error('404, не найдено ордеров по уникальному параметру orderTime'));
+	this.model('order').find({ticket: orderTicket}, function(err, res) {
+		if (err) {
+            callback(err);
+            return;
+        }
+
+		if (res.length > 1) {
+            callback(new Error('500, найдено несколько ордеров по уникальному параметру orderTime'));
+            return;
+        }
+		if (res.length < 1) {
+            callback(new Error('404, не найдено ордеров по уникальному параметру orderTime'));
+            return;
+        }
 
 		callback(null, res[0]);
 	})
-}
+};
 
 
 

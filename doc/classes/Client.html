@@ -123,8 +123,6 @@
             <li class="api-class-tab methods"><a href="#methods">Methods</a></li>
         
         
-            <li class="api-class-tab properties"><a href="#properties">Properties</a></li>
-        
         
         
     </ul>
@@ -140,7 +138,7 @@
                     <ul class="index-list methods extends">
                         
                             <li class="index-item method">
-                                <a href="#method_: createOrderAnalitic">: createOrderAnalitic</a>
+                                <a href="#method__handleProviderClosedOrders">_handleProviderClosedOrders</a>
 
                                 
                                 
@@ -154,6 +152,20 @@
                             </li>
                         
                             <li class="index-item method">
+                                <a href="#method_addToOrderHistory">addToOrderHistory</a>
+
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
+                                <a href="#method_alreadySubscribed">alreadySubscribed</a>
+
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
                                 <a href="#method_changeToken">changeToken</a>
 
                                 
@@ -161,7 +173,81 @@
                             </li>
                         
                             <li class="index-item method">
+                                <a href="#method_checkOnChange">checkOnChange</a>
+
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
+                                <a href="#method_closeOrder">closeOrder</a>
+
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
+                                <a href="#method_create">create</a>
+
+                                
+                                    <span class="flag static">static</span>
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
+                                <a href="#method_createOrder">createOrder</a>
+
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
+                                <a href="#method_createOrderAnalitic">createOrderAnalitic</a>
+
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
+                                <a href="#method_getByTid">getByTid</a>
+
+                                
+                                    <span class="flag static">static</span>
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
+                                <a href="#method_getOrderByTicket">getOrderByTicket</a>
+
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
                                 <a href="#method_getOrders">getOrders</a>
+
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
+                                <a href="#method_getSubscribers">getSubscribers</a>
+
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
+                                <a href="#method_getSubscribtions">getSubscribtions</a>
+
+                                
+                                
+                            </li>
+                        
+                            <li class="index-item method">
+                                <a href="#method_handleProviderTerminalMessage">handleProviderTerminalMessage</a>
 
                                 
                                 
@@ -186,35 +272,6 @@
             
 
             
-                <div class="index-section properties">
-                    <h3>Properties</h3>
-
-                    <ul class="index-list properties extends">
-                        
-                            <li class="index-item property">
-                                <a href="#property_closedOrders* {Array} - список закрытых ордеров в виде объектов типа Order _[order, ...]_">closedOrders* {Array} - список закрытых ордеров в виде объектов типа Order _[order, ...]_</a>
-
-                                
-                                
-                            </li>
-                        
-                            <li class="index-item property">
-                                <a href="#property_confirm  - if true then order closing will be confirmed imediatly">confirm  - if true then order closing will be confirmed imediatly</a>
-
-                                
-                                
-                            </li>
-                        
-                            <li class="index-item property">
-                                <a href="#property_ticket {Integer}">ticket {Integer}</a>
-
-                                
-                                
-                            </li>
-                        
-                    </ul>
-                </div>
-            
 
             
 
@@ -226,8 +283,8 @@
                 <h2 class="off-left">Methods</h2>
 
                 
-                    <div id="method_: createOrderAnalitic" class="method item">
-    <h3 class="name"><code>: createOrderAnalitic</code></h3>
+                    <div id="method__handleProviderClosedOrders" class="method item">
+    <h3 class="name"><code>_handleProviderClosedOrders</code></h3>
 
     
         <div class="args">
@@ -235,7 +292,7 @@
             
                 <li class="arg">
                     
-                        <code>data</code>
+                        <code>orders</code>
                     
                 </li>
             
@@ -262,6 +319,8 @@
     
 
     
+        <span class="flag async">async</span>
+    
 
     <div class="meta">
         
@@ -274,7 +333,7 @@
             
         
         
-        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l641"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:641</code></a>
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l838"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:838</code></a>
         
         </p>
 
@@ -285,8 +344,197 @@
     </div>
 
     <div class="description">
-        <p>data see:  #handleProviderTerminalMessage arg message or data</p>
-<p>анализирует состояние запроса, в зависимости от решения открывает сделку</p>
+        <h1 id="-">Обработать закрытые ордера</h1>
+<p>Входящий параметр <strong>orders</strong> - это массив ордеров на закрытие.</p>
+<p>Данный массив можно получить от провайдера, вызвав метод provider.checkOnChange(...).
+При этом мы получим в ответе два результирующих массива:</p>
+<pre class="code prettyprint"><code>res=[newOrders:[...], closedOrders: [...]];</code></pre>
+<p>Массив <strong>[closedOrders]</strong> состоит из списка ордеров провайдера на закрытие. Каждый
+ордер имеет уникальный параметр ticket, с помщью которого мы можем выбрать у каждого
+подписчика ордер с аналогичным параметром и закрыть его используя метод
+<strong>#closeOrder(orderTicket, ...)</strong> , а также включить его в ответ текущего метода.</p>
+<p>Т.е. для того чтобы закрыть схожие ордера у подписчиков, в данный метод достаточно
+пробросить объекты с единственным полем: <strong>ticket</strong>, а не целые ордера, и этого
+будет также достаточно для успешного завершения работы метода.</p>
+<p>Для каждого подписчика закроет указанные ордера. При этом ордер будет удален из списка
+открытых ордеров <strong>client.openedOrders</strong></p>
+<h2 id="-">Формат возвращаемых данных:</h2>
+<pre class="code prettyprint"><code>res = [{
+    subscriber: Client,
+    order: Order,
+    tid: subscriber.tid,
+    action: &quot;close&quot;,
+    data: {
+        ticket Integer
+    }
+}]</code></pre>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">orders</code>
+                        <span class="type">Array</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                        <p>list of the orders (instance of Order) to close</p>
+
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">res</code>
+                                    <span class="type">Array</span>
+                                
+
+                                <div class="param-description">
+                                    <p>see above</p>
+
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+</div>
+
+                
+                    <div id="method__handleProviderNewOrders" class="method item">
+    <h3 class="name"><code>_handleProviderNewOrders</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>data</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>expanded</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l1000"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:1000</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Обработка списка новых ордеров</h1>
+<p>Для каждого подписчика вызывает метод <strong>#createOrderAnalitic</strong> для каждого ордера
+из списка полученных ордеров на открытие.</p>
+<p>В данном методе список полученных ордеров на открытие - нативные сообщения от терминала,
+а не оредра из БД.</p>
+<h2 id="-">Формат возвращаемых данных:</h2>
+<pre class="code prettyprint"><code>res = [{
+        subscriber: Client,
+        tid: subscriber.tid,
+        order: Order,
+        action: &quot;create&quot;,
+        data: {
+            ticket: null
+            type Ineger
+            symbol String
+            lots Double
+            comment String
+        }
+    }]</code></pre>
 
     </div>
 
@@ -321,17 +569,39 @@
                     
 
                     <div class="param-description">
-                        <p>Возвращает инфу в виде:
-{
-    order: {Order},
-    data: {
-        ticket: null,
-        type
-        symbol
-        lots
-        comment
-    }
-}</p>
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">expanded</code>
+                        <span class="type">Res</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                        <p>response. See above</p>
 
                     </div>
 
@@ -348,8 +618,8 @@
 </div>
 
                 
-                    <div id="method__handleProviderNewOrders" class="method item">
-    <h3 class="name"><code>_handleProviderNewOrders</code></h3>
+                    <div id="method_addToOrderHistory" class="method item">
+    <h3 class="name"><code>addToOrderHistory</code></h3>
 
     
         <div class="args">
@@ -357,7 +627,19 @@
             
                 <li class="arg">
                     
-                        <code>data</code>
+                        <code>ticket</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>tOrder</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
                     
                 </li>
             
@@ -365,6 +647,166 @@
         </div>
     
 
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l1080"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:1080</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Добавить историю сделки</h1>
+<p>Метод получает данные терминала в исходном виде и добавляет их в историю указанного 
+ордера <strong>Order.history</strong>.</p>
+<p>Если данные не изменились с последнего раза, добавления в историю не произойдет.</p>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">ticket</code>
+                        <span class="type">Number</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                        <p>terminal&#39;s order ticket</p>
+
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">tOrder</code>
+                        <span class="type">Object</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                        <p>plain terminal object</p>
+
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">res</code>
+                                    <span class="type"><a href="../classes/Order.html" class="crosslink">Order</a></span>
+                                
+
+                                <div class="param-description">
+                                    <p>updated order (instance of Order)</p>
+
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+</div>
+
+                
+                    <div id="method_alreadySubscribed" class="method item">
+    <h3 class="name"><code>alreadySubscribed</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>provider</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+        <span class="returns-inline">
+            <span class="type">Boolean</span>
+        </span>
     
 
     
@@ -390,7 +832,7 @@
             
         
         
-        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l690"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:690</code></a>
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l136"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:136</code></a>
         
         </p>
 
@@ -401,22 +843,9 @@
     </div>
 
     <div class="description">
-        <p>Получает дату от терминала. Получает всех подписчиков и для каждого подписчика
-вызывает метод #createOrderAnalitic
-Ответ в виде:</p>
-<p>[{
-    subscriber: {Client},
-    tid: client.tid,
-    order: {Order},
-    action: &quot;create&quot;,
-    data: {
-        ticket: null
-        type
-        symbol
-        lots
-        comment
-    }
-}]</p>
+        <h1 id="-">Проверить на существующую подписку</h1>
+<p>Метод проверит существует ли подписка на заданный клиент-провайдер.</p>
+<p>В случае, если подписка на данного провайдера у текущего терминала уже есть, вернет true</p>
 
     </div>
 
@@ -428,14 +857,14 @@
             
                 <li class="param">
                     
-                        <code class="param-name">data</code>
+                        <code class="param-name">provider</code>
                         <span class="type">Object</span>
                     
 
                     
 
                     <div class="param-description">
-                        <p>plain terminal message</p>
+                        <p>-клиент провайдер</p>
 
                     </div>
 
@@ -446,6 +875,20 @@
         </div>
     
 
+    
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                
+                    
+                        <span class="type">Boolean</span>:
+                    
+                    <p>true | false</p>
+
+                
+            </div>
+        </div>
     
 
     
@@ -502,7 +945,7 @@
             
         
         
-        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l128"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:128</code></a>
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l239"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:239</code></a>
         
         </p>
 
@@ -514,8 +957,8 @@
 
     <div class="description">
         <h1 id="-">Изменить токен</h1>
-<p>Метод изменяет токен для текущего клиента. Токен может быть назначен только из таблицы существующих 
-токенов.
+<p>Метод изменяет токен для текущего клиента.
+Токен может быть назначен только из таблицы существующих токенов.
 Токен должен быть:</p>
 <ul>
 <li>существующим</li>
@@ -534,6 +977,765 @@
                 <li class="param">
                     
                         <code class="param-name">token</code>
+                        <span class="type">Token</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">res</code>
+                                    <span class="type"><a href="../classes/Client.html" class="crosslink">Client</a></span>
+                                
+
+                                <div class="param-description">
+                                    <p>-текущий объект клиента</p>
+
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+</div>
+
+                
+                    <div id="method_checkOnChange" class="method item">
+    <h3 class="name"><code>checkOnChange</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>orderList</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l650"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:650</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Проверить на обновления</h1>
+<p>Метод получает список открытых позиций и сравнивает с уже открытыми ордерами.
+Возвращает информацию с отличиями.</p>
+<p>Если отличий нет, будут возвращены пустые массивы.</p>
+<p>!!! Не подтвержденные ордера со статусом <em>CREATING (11)_</em>
+не попадут в список изменений.</p>
+<h2 id="-orderlist-message-data-">Хэш сообщения от терминала orderList (message.data)</h2>
+<pre class="code prettyprint"><code>orderList = [{
+    symbol: String
+    type: Integer
+    lots: Double
+    open-time: Number (Int timestamp linux)
+    open-price: Number (Double)
+    swap: Number Double
+    profit: Double
+    take-profit: Double
+}]</code></pre>
+<h2 id="res-">res: возвращаемые данные</h2>
+<pre class="code prettyprint"><code>newOrders = [{
+    ticket: Integer
+    symbol: String
+    type: Integer
+    lots: Double
+    open-time: Number (Int timestamp linux)
+    open-price: Number (Double)
+    swap: Number Double
+    profit: Double
+    take-profit: Double
+}, ...]
+
+closedOrders = [{instance of Order}, ...]</code></pre>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">orderList</code>
+                        <span class="type">Object</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                        <p>native terminal message</p>
+
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">res</code>
+                                    <span class="type">Object</span>
+                                
+
+                                <div class="param-description">
+                                    <p><em>see above</em></p>
+
+                                </div>
+
+                                
+                                    <ul class="params-list">
+                                        
+                                        <li class="param">
+                                            
+                                                <code class="param-name">newOrders</code>
+                                                <span class="type">Array</span>
+                                            
+
+                                            <div class="param-description">
+                                                
+                                            </div>
+                                        </li>
+                                        
+                                        <li class="param">
+                                            
+                                                <code class="param-name">closedOrders</code>
+                                                <span class="type">Array</span>
+                                            
+
+                                            <div class="param-description">
+                                                
+                                            </div>
+                                        </li>
+                                        
+                                    </ul>
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+        <div class="example">
+            <h4>Example:</h4>
+
+            <div class="example-content">
+                <pre class="code prettyprint"><code>// Ордер в статусе __OPENED__ попадет в список closedOrders
+
+var order1 = {
+    ticket: 123,
+    state: 12,
+    ...
+}
+
+// orderList не имеет в списке объекта с ticket=123
+
+client.checkOnChange({ticket: 123, ...}, function(err, res) {
+    res.closedOrders = [{order(with ticket=123)}, ...]
+})
+
+// Ордер в статусе __OPENING не попадет всписок closedOrders
+
+var order1 = {
+    ticket: 123,
+    state: 11,
+    ...
+}
+
+// orderList не имеет в списке объекта с ticket=123
+
+client.checkOnChange({ticket: 123, ...}, function(err, res) {
+    // assert(res.closedOrder.indexOf(order(with ticket=123)) === -1, true]
+})</code></pre>
+
+            </div>
+        </div>
+    
+</div>
+
+                
+                    <div id="method_closeOrder" class="method item">
+    <h3 class="name"><code>closeOrder</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>orderTicket</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>options</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l456"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:456</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Закрыть ордер</h1>
+<p>Метод закрывает ранее открытый ордер. По умолчанию статус ордера будет <strong>CLOSING (21)</strong></p>
+<p>Для закрытия с подтверждением используейте опцию <strong>confirm</strong>.
+При этом ордер получит статус <strong>CLOSED (22)</strong>, а также id ордера будет удален из
+списка открытых ордеров <strong>@openOrders</strong> текущего клиента.</p>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">orderTicket</code>
+                        <span class="type">Integer</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">options</code>
+                        <span class="type">Object</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">confirm</code>
+                                    <span class="type">Boolean</span>
+                                
+
+                                <div class="param-description">
+                                    <ul>
+<li>if true then closed order will be confirmed imediatly</li>
+</ul>
+
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">res</code>
+                                    <span class="type"><a href="../classes/Order.html" class="crosslink">Order</a></span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+</div>
+
+                
+                    <div id="method_create" class="method item">
+    <h3 class="name"><code>create</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>data</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag static">static</span>
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l51"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:51</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Создать терминал</h1>
+<p>Создает новый терминал.</p>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">data</code>
+                        <span class="type">Object</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                        <p>see: class property</p>
+
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">client</code>
+                                    <span class="type">Object</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+        <div class="example">
+            <h4>Example:</h4>
+
+            <div class="example-content">
+                <pre class="code prettyprint"><code>var values = {
+    name: &#39;test terminal&#39;,
+    type: &#39;provider&#39;,
+    tid: &#39;12345&#39;
+}
+
+Client.crete(values, function(err, client) {
+    // client will be an object instance of Client
+})</code></pre>
+
+            </div>
+        </div>
+    
+</div>
+
+                
+                    <div id="method_createOrder" class="method item">
+    <h3 class="name"><code>createOrder</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>values</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>options</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l325"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:325</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Создать запись о новом ордере</h1>
+<p>Методы создает новую запись в таблице orders, привязывая его к текущему клиенту.</p>
+<p>Используйте этот метод, когда хотите инициировать создание нового ордера со стороны сервера.</p>
+<p>По умочанию метод создает новый ордер в статусе <strong>CREATING (11)</strong>.
+Для создания ордера в статусе <strong>CREATED (12)</strong> необходимо передать в опциях параметр
+<strong>@confirm</strong>. При этом ордер также будет добавлен в свойство <strong>@openOrders</strong> текущего
+клиента.</p>
+<p>Минимальные свойства сообщения __@values</p>
+<pre class="code prettyprint"><code>* type
+* symbol
+* lots
+* comment</code></pre>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">values</code>
+                        <span class="type">Object</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                        <ul>
+<li>plain terminal message. see above</li>
+</ul>
+
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">options</code>
                         <span class="type">Object</span>
                     
 
@@ -549,7 +1751,7 @@
                 <li class="param">
                     
                         <code class="param-name">callback</code>
-                        <span class="type">Function (err, token )</span>
+                        <span class="type">Function</span>
                     
 
                     
@@ -558,6 +1760,507 @@
                          
                     </div>
 
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">res</code>
+                                    <span class="type"><a href="../classes/Order.html" class="crosslink">Order</a></span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+</div>
+
+                
+                    <div id="method_createOrderAnalitic" class="method item">
+    <h3 class="name"><code>createOrderAnalitic</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>data</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>expanded</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l941"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:941</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Открыть ордер с аналитикой</h1>
+<p>Метод получает данные от терминала и анализирует их. При положительном решении
+открывает новый ордер.</p>
+<p>В данном методе необходимо инкапсулировать все логические функции (order open middlware)
+которые принимают решение для открытия нового ордера.</p>
+<h2 id="-">Формат возвращаемых данных</h2>
+<p>res = {
+    order: {Order},
+    data: {
+        ticket null,
+        type Integer
+        symbol String
+        lots Double
+        comment String
+    }
+}</p>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">data</code>
+                        <span class="type">Object</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                        <p>plain terminal message.</p>
+
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">expanded</code>
+                        <span class="type">Object</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                        <p>response</p>
+
+                    </div>
+
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+</div>
+
+                
+                    <div id="method_getByTid" class="method item">
+    <h3 class="name"><code>getByTid</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>tid</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag static">static</span>
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l96"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:96</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-tid">Получить клиент по свойству @tid</h1>
+<p>Метод производит поиск по свойству <strong>client.tid</strong>.</p>
+<p>В случае если клиент не найден, вернет null</p>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">tid</code>
+                        <span class="type">Number</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">client</code>
+                                    <span class="type"><a href="../classes/Client.html" class="crosslink">Client</a></span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+        <div class="example">
+            <h4>Example:</h4>
+
+            <div class="example-content">
+                <pre class="code prettyprint"><code>// клиент с tid = 123 существует
+Client.getByTid(123, function(err, client) {
+    // client = {tid: 123, ...}
+})
+
+// клиет с tid = 123 не существует
+Client.getByTid(123, function(err, client) {
+    // err=null, client = null
+})</code></pre>
+
+            </div>
+        </div>
+    
+</div>
+
+                
+                    <div id="method_getOrderByTicket" class="method item">
+    <h3 class="name"><code>getOrderByTicket</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>ticket</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l610"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:610</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Найти ордер по тикету</h1>
+<p>Найдет ордер по его тикету.</p>
+<p>В случае, если ордер не найден, будет возвращен результат null</p>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">ticket</code>
+                        <span class="type">Integer</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Functiom</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">res</code>
+                                    <span class="type"><a href="../classes/Order.html" class="crosslink">Order</a></span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
                     
                 </li>
             
@@ -619,7 +2322,7 @@
             
         
         
-        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l389"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:389</code></a>
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l571"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:571</code></a>
         
         </p>
 
@@ -743,8 +2446,8 @@
 </div>
 
                 
-                    <div id="method_subscribe" class="method item">
-    <h3 class="name"><code>subscribe</code></h3>
+                    <div id="method_getSubscribers" class="method item">
+    <h3 class="name"><code>getSubscribers</code></h3>
 
     
         <div class="args">
@@ -752,7 +2455,7 @@
             
                 <li class="arg">
                     
-                        <code>provider</code>
+                        <code>callback</code>
                     
                 </li>
             
@@ -761,10 +2464,6 @@
     
 
     
-        <span class="returns-inline">
-            <span class="type">Object</span>
-        </span>
-    
 
     
 
@@ -776,6 +2475,8 @@
 
     
 
+    
+        <span class="flag async">async</span>
     
 
     <div class="meta">
@@ -789,7 +2490,7 @@
             
         
         
-        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l78"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:78</code></a>
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l294"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:294</code></a>
         
         </p>
 
@@ -800,8 +2501,443 @@
     </div>
 
     <div class="description">
-        <h1 id="-">Пописаться</h1>
-<p>Метод подписывает один терминал на другой. Подписаться можно только на терминал с типом провайдер.</p>
+        <h1 id="-">Получить всех подписчиков.</h1>
+<p>Позволяет быстро получить все <strong>терминалы консюмеры</strong> (в виде АПИ объектов)
+которые подписаны на данный терминал.</p>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">subscribers</code>
+                                    <span class="type">Array</span>
+                                
+
+                                <div class="param-description">
+                                    <p>-clients</p>
+
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+</div>
+
+                
+                    <div id="method_getSubscribtions" class="method item">
+    <h3 class="name"><code>getSubscribtions</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l269"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:269</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Получить все подписки.</h1>
+<p>Позволяет быстро получить все <strong>терминалы провайдеры</strong> (в виде АПИ объектов)
+на которые подписан текущий терминал.</p>
+<p>В случае, если ни один терминал не найден, вернет пустой массив.</p>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">clients</code>
+                                    <span class="type">Array</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+        <div class="example">
+            <h4>Example:</h4>
+
+            <div class="example-content">
+                <pre class="code prettyprint"><code>consumer.getSubscriptions(function(err, res) {
+    // ... res = [clients.. ];
+})</code></pre>
+
+            </div>
+        </div>
+    
+</div>
+
+                
+                    <div id="method_handleProviderTerminalMessage" class="method item">
+    <h3 class="name"><code>handleProviderTerminalMessage</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>openOrders</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l768"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:768</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Обработать сообщение от провайдера</h1>
+<p>Методы проводит следующую логику:</p>
+<ul>
+<li>проверит новые и закрытые ордера</li>
+<li>добавит в историю провайдера текущее сообщение от терминала</li>
+<li>вызовет метод <strong>#_handleProviderNewOrders</strong> для новых ордеров</li>
+<li>вызовет метод <strong>#_handleProviderClosedOrders</strong> для закрытых ордеров</li>
+<li>вернет расширенные данные с информацией обо всех событиях</li>
+</ul>
+<h2 id="-">Формат возвращаемых данных</h2>
+<pre class="code prettyprint"><code>res = [{
+    subscriber: Client,
+    order: Order
+    tid: subscriber.tid,
+    action: &quot;create|close&quot;,
+    data: {
+        ticket: action == &quot;create&quot; ? null: Order.ticket
+        type Integer
+        symbol String
+        lots Double
+        comment String
+    }
+}]</code></pre>
+
+    </div>
+
+    
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+            
+                <li class="param">
+                    
+                        <code class="param-name">openOrders</code>
+                        <span class="type">Object</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                        <p>property from native terminal message type: 10</p>
+
+                    </div>
+
+                    
+                </li>
+            
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">res</code>
+                                    <span class="type">Object</span>
+                                
+
+                                <div class="param-description">
+                                    <p>expanded response. see above</p>
+
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
+            </ul>
+        </div>
+    
+
+    
+
+    
+</div>
+
+                
+                    <div id="method_subscribe" class="method item">
+    <h3 class="name"><code>subscribe</code></h3>
+
+    
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+            
+                <li class="arg">
+                    
+                        <code>provider</code>
+                    
+                </li>
+            
+                <li class="arg">
+                    
+                        <code>callback</code>
+                    
+                </li>
+            
+            </ul><span class="paren">)</span>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <span class="flag async">async</span>
+    
+
+    <div class="meta">
+        
+            
+                
+                <p>
+                
+                Defined in
+                
+            
+        
+        
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l154"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:154</code></a>
+        
+        </p>
+
+
+        
+
+        
+    </div>
+
+    <div class="description">
+        <h1 id="-">Пописаться на провайдера</h1>
+<p>Метод производит подписку терминала типа <em>consumer</em> на терминал типа <em>provider</em>. В любых
+других вариациях будет вызвана ошибка:</p>
+<pre class="code prettyprint"><code>&#39;[Client #subscribe] error: it is forbidden subscribe on the client with no provider type&#39;</code></pre>
+<p>При попытке подписаться на провайдера, на которого уже есть подписка, будет также вызвана
+ошибка:</p>
+<pre class="code prettyprint"><code>&#39;[Client #subscribe] error: subscriptions already exist&#39;</code></pre>
+<p>При удачной подписке у текущего объекта в свойстве <strong>@subscriptions</strong> будет добавлен id
+клиента-провайдера.</p>
 
     </div>
 
@@ -827,28 +2963,77 @@
                     
                 </li>
             
+                <li class="param">
+                    
+                        <code class="param-name">callback</code>
+                        <span class="type">Function</span>
+                    
+
+                    
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                    
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">client</code>
+                                    <span class="type">Object</span>
+                                
+
+                                <div class="param-description">
+                                    <p>-consumer</p>
+
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
+                </li>
+            
             </ul>
         </div>
     
 
     
-        <div class="returns">
-            <h4>Returns:</h4>
 
-            <div class="returns-description">
-                
-                    
-                        <span class="type">Object</span>:
-                    
-                    <ul>
-<li>instance of Order</li>
-</ul>
+    
+        <div class="example">
+            <h4>Example:</h4>
 
-                
+            <div class="example-content">
+                <pre class="code prettyprint"><code>// consumer.type = consumer
+// provider.type = provider
+
+client.subscribe(provider, function(err, client) {
+    assert(client.subscriptions.indexOf(provier._id) !== -1, true);
+})
+
+// повторная подписка приведет к ошибке
+client.subscribe(provider, function(err, client) {
+    // err != null
+})</code></pre>
+
             </div>
         </div>
-    
-
     
 </div>
 
@@ -877,10 +3062,6 @@
     
 
     
-        <span class="returns-inline">
-            <span class="type">Object</span>
-        </span>
-    
 
     
 
@@ -907,7 +3088,7 @@
             
         
         
-        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l109"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:109</code></a>
+        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l212"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:212</code></a>
         
         </p>
 
@@ -920,6 +3101,8 @@
     <div class="description">
         <h1 id="-">Одписаться</h1>
 <p>Метод отписывает терминал потребитель от терминала провайдера.</p>
+<p>В случае если терминал не имеет подписки на передаваемый провайдер, будет возвращена ошибка:</p>
+<pre class="code prettyprint"><code>&#39;[Client #unsubscribe] error: consumer has no subscription on this provider&#39;</code></pre>
 
     </div>
 
@@ -932,7 +3115,7 @@
                 <li class="param">
                     
                         <code class="param-name">provider</code>
-                        <span class="type">Object</span>
+                        <span class="type"><a href="../classes/Client.html" class="crosslink">Client</a></span>
                     
 
                     
@@ -958,6 +3141,36 @@
                     </div>
 
                     
+                        <ul class="params-list">
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">err</code>
+                                    <span class="type">Error</span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                            <li class="param">
+                                
+                                    <code class="param-name">res</code>
+                                    <span class="type"><a href="../classes/Client.html" class="crosslink">Client</a></span>
+                                
+
+                                <div class="param-description">
+                                    
+                                </div>
+
+                                
+                            </li>
+                            
+                        </ul>
+                    
                 </li>
             
             </ul>
@@ -965,22 +3178,6 @@
     
 
     
-        <div class="returns">
-            <h4>Returns:</h4>
-
-            <div class="returns-description">
-                
-                    
-                        <span class="type">Object</span>:
-                    
-                    <ul>
-<li>instance of Client</li>
-</ul>
-
-                
-            </div>
-        </div>
-    
 
     
 </div>
@@ -989,290 +3186,6 @@
             </div>
         
 
-        
-            <div id="properties" class="api-class-tabpanel">
-                <h2 class="off-left">Properties</h2>
-
-                
-                    <div id="property_closedOrders* {Array} - список закрытых ордеров в виде объектов типа Order _[order, ...]_" class="property item">
-    <h3 class="name"><code>closedOrders* {Array} - список закрытых ордеров в виде объектов типа Order _[order, ...]_</code></h3>
-    <span class="type">Array</span>
-
-    
-
-    
-
-    
-
-    
-
-    <div class="meta">
-        
-            
-                
-                <p>
-                
-                Defined in
-                
-            
-        
-        
-        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l453"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:453</code></a>
-        
-        </p>
-
-        
-
-        
-    </div>
-
-    <div class="description">
-        <h1 id="-">Сверить ордера</h1>
-<p>Метод получает список открытых позиций и сравнивает с уже открытыми.
-Возвращает информацию с отличиями.</p>
-<h2 id="-orderlist-message-data-">хэш сообщения от терминала orderList (message.data)</h2>
-<p>orderList = [{
-    symbol: String,
-    type: Number (Int),
-    lots: Number (double)
-    open-time: Number (Int timestamp linux)
-    open-price: Number (Double)
-    swap: Number (Double)
-    profit: Number (Int)
-    take-profit: Number (Int)
-}]</p>
-<h2 id="res-">res: возвращаемые данные</h2>
-
-    </div>
-
-    
-
-    
-
-    
-        <h4>Sub-properties:</h4>
-
-        <ul class="params-list">
-            
-            <li class="param">
-                
-                    <code class="param-name">orderList</code>
-                    <span class="type">Object</span>
-                
-
-                <div class="param-description">
-                    <p>see description orderList</p>
-
-                </div>
-
-                
-            </li>
-            
-            <li class="param">
-                
-                    <code class="param-name">callback</code>
-                    <span class="type">Function (err, res)</span>
-                
-
-                <div class="param-description">
-                    <p>see res</p>
-
-                </div>
-
-                
-            </li>
-            
-        </ul>
-    
-</div>
-
-                
-                    <div id="property_confirm  - if true then order closing will be confirmed imediatly" class="property item">
-    <h3 class="name"><code>confirm  - if true then order closing will be confirmed imediatly</code></h3>
-    <span class="type">Boolean</span>
-
-    
-
-    
-
-    
-
-    
-
-    <div class="meta">
-        
-            
-                
-                <p>
-                
-                Defined in
-                
-            
-        
-        
-        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l304"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:304</code></a>
-        
-        </p>
-
-        
-
-        
-    </div>
-
-    <div class="description">
-        
-    </div>
-
-    
-
-    
-
-    
-        <h4>Sub-properties:</h4>
-
-        <ul class="params-list">
-            
-            <li class="param">
-                
-                    <code class="param-name">orderTicket</code>
-                    <span class="type">Integer</span>
-                
-
-                <div class="param-description">
-                     
-                </div>
-
-                
-            </li>
-            
-            <li class="param">
-                
-                    <code class="param-name">_options</code>
-                    <span class="type">Object</span>
-                
-
-                <div class="param-description">
-                     
-                </div>
-
-                
-            </li>
-            
-            <li class="param">
-                
-                    <code class="param-name">callback</code>
-                    <span class="type">Function</span>
-                
-
-                <div class="param-description">
-                    <p>arg: err, order</p>
-
-                </div>
-
-                
-            </li>
-            
-        </ul>
-    
-</div>
-
-                
-                    <div id="property_ticket {Integer}" class="property item">
-    <h3 class="name"><code>ticket {Integer}</code></h3>
-    <span class="type">Integer</span>
-
-    
-
-    
-
-    
-
-    
-
-    <div class="meta">
-        
-            
-                
-                <p>
-                
-                Defined in
-                
-            
-        
-        
-        <a href="../files/_home_sergey_WebstormProjects_myProjects_forex-server_app_models_client.js.html#l188"><code>&#x2F;home&#x2F;sergey&#x2F;WebstormProjects&#x2F;myProjects&#x2F;forex-server&#x2F;app&#x2F;models&#x2F;client.js:188</code></a>
-        
-        </p>
-
-        
-
-        
-    </div>
-
-    <div class="description">
-        <h1 id="-">Создать запись о новом ордере</h1>
-<p>Методы создает новую запись в таблице orders, привязывая его к текущему клиенту.</p>
-<p>Используйте этот метод, когда хотите инициировать создание нового ордера со стороны сервера.</p>
-
-    </div>
-
-    
-
-    
-
-    
-        <h4>Sub-properties:</h4>
-
-        <ul class="params-list">
-            
-            <li class="param">
-                
-                    <code class="param-name">values</code>
-                    <span class="type">Object</span>
-                
-
-                <div class="param-description">
-                    <ul>
-<li>данные для создания нового ордера</li>
-</ul>
-
-                </div>
-
-                
-            </li>
-            
-            <li class="param">
-                
-                    <code class="param-name">_options</code>
-                    <span class="type">Object</span>
-                
-
-                <div class="param-description">
-                     
-                </div>
-
-                
-            </li>
-            
-            <li class="param">
-                
-                    <code class="param-name">callback</code>
-                    <span class="type">Function</span>
-                
-
-                <div class="param-description">
-                     
-                </div>
-
-                
-            </li>
-            
-        </ul>
-    
-</div>
-
-                
-            </div>
         
 
         
