@@ -190,52 +190,6 @@ function handlerMessageForProvider(client, message, callback) {
     // });
 }
 
-function handlerMessageForConsumer() {
-
-}
-
-
-function messageOrderInd(client, message, callback) {
-
-    var diff = null;
-
-    function createOrder(values, done) {
-        client.createOrder(values, done);
-    }
-
-    function closeOrder(order, done) {
-        client.closeOrder(order.orderTime, done);
-    }
-
-    if (client.type === 'provider') {
-
-    }
-
-    if (client.type === 'consumer') {
-
-    }
-
-
-
-    async.waterfall([
-        function (next) {
-            client.checkOnChange(message.data, next);
-        },
-
-        function(res, next) {
-            diff = res;
-            console.log('>>', diff);
-            async.eachSeries(diff.newOrders, createOrder.bind(this), next);
-        },
-
-        function (next) {
-            async.eachSeries(diff.closedOrders, closeOrder.bind(this), next);
-        }
-
-    ], callback);
-}
-
-
 module.exports.start = function start() {
     server.on('listening', function() {
         console.log('Server is started listening on port', port);
@@ -287,64 +241,6 @@ module.exports.start = function start() {
         }
 
         return;
-
-        // async.waterfall([
-        //     function(callback) {
-        //         Client.getByTid(socket.tid, callback);
-        //     },
-        //     function(client, callback) {
-
-        //         switch(message.type) {
-        //             case messageTypes.ORDERS_IND:
-        //                 messageOrderInd(client, callback);
-        //                 break;
-
-        //             case messageTypes.ORDER_OPEN_CONFIRM:
-        //                 // message must have field data.orderTime
-
-        // //                 client.sendMessage({
-        // //     type: messageTypes.ORDER_OPEN_REQ,
-        // //     data: {
-        // //         type:   order.type,
-        // //         symbol: order.symbol,
-        // //         lots:   order.lots,
-        // //         comment: order._id
-        // //     }
-        // // });
-
-        //                 if (message.code != 0) {
-        //                     console.error('ORDER_OPEN_CONFIRM error ', message.code);
-        //                     break;
-        //                 };
-
-        //                 client.confirmOrderCreation(message.data.ticket, callback);
-        //                 break;
-
-
-        //             case messageTypes.ORDER_CLOSE_CONF:
-
-        // //                 self.sendMessage({
-        // //     type: messageTypes.ORDER_CLOSE_REQ,
-        // //     data: {ticket: order.ticket}
-        // // });
-
-        //                 if (message.code != 0) {
-        //                     console.error('ORDER_OPEN_CONFIRM error ', message.code);
-        //                     break;
-        //                 };
-        //                 client.confirmOrderClosing(message.data.ticket, callback);
-        //                 break;
-
-
-        //             default:
-        //                 callback('Не найден обработчик сигнала или блядская ошибка типа ', message.code);
-
-        //         }
-        //     }
-
-        // ], function(err) {
-        //     if (err) console.error(err);
-        // });
     });
 };
 
