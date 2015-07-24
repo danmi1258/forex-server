@@ -28,7 +28,11 @@ var Order = BaseSchema.extend({
     // has value then the order opened in the terminal(confirm open order)
     openedOn: Date,
     // has value then the order closed in the terminal (confirm close order)
-    closedOn: Date
+    closedOn: Date,
+    // self unic reference
+    reference: String,
+    // id of the master (generating) order
+    relatedOrder: String
 });
 
 
@@ -59,6 +63,19 @@ Order.statics.getByTicket = function(orderTicket, callback) {
 	})
 };
 
+Order.statics.getByReference  = function(ref, callback) {
+    this.model('order').findOne({reference: ref}, function(err, res) {
+        if (err) {
+            return callback(err);
+        }
+
+        if (!res) {
+            return callback(new Error('404, не найдено ордеров по уникальному параметру "ref"'));
+        }
+
+        callback(null, res);
+    });
+};
 
 
 

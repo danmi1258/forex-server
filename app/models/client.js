@@ -5,6 +5,7 @@ var orderStates = config.orderStates;
 var _ = require('underscore');
 var Order = require('./order');
 var async = require('async');
+var utils = require('../utils');
 
 
 // !! not var. set is as global;
@@ -363,8 +364,7 @@ Client.methods.createOrder = function(_values, _options, callback) {
     var requiredParams = {
         type: 'number',
         symbol: 'string',
-        lots: 'number',
-        comment: 'string'
+        lots: 'number'
     };
 
     var keys = Object.keys(requiredParams);
@@ -387,6 +387,7 @@ Client.methods.createOrder = function(_values, _options, callback) {
 
     values.state = orderStates.CREATING;
     values.client = this._id;
+    values.reference = utils.createUniqueKey();
     
     async.waterfall([
         function (next) {
@@ -413,29 +414,29 @@ Client.methods.createOrder = function(_values, _options, callback) {
     
     @Example
 
-        client.confirmOrderCreation(12345, function(err, res) {
+        client.confirmOrderCreation('12345', function(err, res) {
             // res={state: 12, ...}
             // client = {openOrders: [res._id, ...]}
         })
 
-    @param orderTicket {Number} - номер тикета. Аналог ID
+    @param reference {String} - уникальный референс ордера.
     @param callback {Function}
         @param {Error} callback.err
         @param {Order} callback.res
 */
-Client.methods.confirmOrderCreation = function(orderTicket, callback) {
+Client.methods.confirmOrderCreation = function(reference, callback) {
     
     var self = this;
 
     async.waterfall([
         // get order
         function (next) {
-            if (orderTicket._id) {
-                next(null, orderTicket);
+            if (reference._id) {
+                next(null, reference);
                 return;
             }
 
-            this.getByTicket(orderTicket, next);
+            self.getByReference(reference, next);
         },
         // modify order status & openTime
         function (order, next) {
@@ -489,7 +490,7 @@ Client.methods.closeOrder = function(orderTicket, _options, callback) {
 
             self.getOrderByTicket(orderTicket, function(err, order) {
                 if (err) {
-                    next(err);
+                    next(new Error('order not found error'));
                     return;
                 }
 
@@ -538,6 +539,7 @@ Client.methods.confirmOrderClosing = function(orderTicket, callback) {
     var self = this;
 
     async.waterfall([
+        // get order
         function(next) {
             if (orderTicket._id) {
                 next(null, orderTicket);
@@ -546,15 +548,18 @@ Client.methods.confirmOrderClosing = function(orderTicket, callback) {
 
             self.getOrderByTicket(orderTicket, next);
         },
+        // update order
         function(order, next) {
             order.state = orderStates.CLOSED;
             order.closedOn = new Date().getTime();
             order.save(next);
         },
+        // remove order id from the list of opent orders
         function(order, num, next) {
-            var index = self.openOrders(order._id);
+            var index = self.openOrders.indexOf(order._id);
+
             if (index !== -1) {
-                self.splice(index, 1);
+                self.openOrders.splice(index, 1);
                 self.save(function(err) {
                     next(err, order);
                 });
@@ -656,9 +661,10 @@ Client.methods.hasOpenOrders = function() {
 
     Если отличий нет, будут возвращены пустые массивы.
     
-    !!! Не подтвержденные ордера со статусом _CREATING (11)__
-    не попадут в список изменений.
+    В опциях можно передать параметр __states__, список статусов ордеров, которые будут
+    задействованы в сравнении.
 
+    
     Хэш сообщения от терминала orderList (message.data)
     ---------------------------------------------------
 
@@ -724,19 +730,30 @@ Client.methods.hasOpenOrders = function() {
     @async
     @method checkOnChange
     @param orderList {Object} native terminal message
+    @param options {Object}
+        @param states {Array} options.states. List of the order states will be included in result.
+        @default states = [12]
     @param callback {Function}
         @param {Error} callback.err
         @param {Object} callback.res _see above_
             @param {Array} callback.res.newOrders
             @param {Array} callback.res.closedOrders
 */
-Client.methods.checkOnChange = function(orderList, callback) {
+Client.methods.checkOnChange = function(orderList, options, callback) {
+
+
+    if (arguments.length === 2) {
+        callback = arguments[1];
+        options = {
+            states: [config.orderStates.CREATED]
+        };
+    }
 
     if (!_.isArray(orderList)) {
         throw new Error('[Client #checkOnChange] wrong argument error:  orderList must be an array')
     }
     //  запрос списка открытых ордеров, принадлежащих данному клиенту.
-    this.getOrders({states: [config.orderStates.CREATED]}, function(err, orders) {
+    this.getOrders({states: options.states}, function(err, orders) {
         if (err) {
             callback(err);
             return;
@@ -809,8 +826,10 @@ Client.methods.handleProviderTerminalMessage = function(openOrders, callback) {
 
     async.waterfall([
         function (next) {
-            self.checkOnChange(openOrders, next);
+            self.checkOnChange(openOrders, {states: [11,12]}, next);
         },
+
+        // store changes. open new orders for self if exists
         function (_res, next) {
             changes = _res;
 
@@ -819,12 +838,29 @@ Client.methods.handleProviderTerminalMessage = function(openOrders, callback) {
                 return;
             }
 
+            function openOrder(order, done) {
+                self.createOrder(order, {confirm: true}, done);
+            }
+
+            async.eachSeries(changes.newOrders, openOrder, next);
+        },
+        // close closed orders for self if exists
+        function (next) {
+            function closeOrder(order, done) {
+                self.closeOrder(order, {confirm: true}, done);
+            }
+            async.eachSeries(changes.closedOrders, closeOrder, next);
+        },
+        // open new orders for subscribers. make result hash
+        function (next) {
             self._handleProviderNewOrders(changes.newOrders, next);
         },
+        // close orders for subscribers. make result hash
         function (_res, next) {
             res = _.union(res, _res);
             self._handleProviderClosedOrders(changes.closedOrders, next);
         },
+        // union results
         function (_res, next) {
             res = _.union(res, _res);
             next(null, res);
@@ -953,7 +989,7 @@ Client.methods._handleProviderClosedOrders = function(orders, callback) {
     res = {
         order: {Order},
         data: {
-            ticket null,
+            ticket Integer,
             type Integer
             symbol String
             lots Double
@@ -978,7 +1014,7 @@ Client.methods.createOrderAnalitic = function(data, callback) {
     }
      // todo сделать вычисление лота на основе данных клиента.
     data.ticket = null;
-    data.lots = 1;
+    data.lots = 0.01;
 
     this.createOrder(data, function(_err, order) {
         if (err) {
@@ -986,6 +1022,9 @@ Client.methods.createOrderAnalitic = function(data, callback) {
             callback(_err);
             return;
         }
+
+        data.comment = 'comment';
+
 
         var res = {
             order: order,

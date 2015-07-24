@@ -2,18 +2,34 @@ var moloko = require('moloko');
 var Client = require('./models/client');
 var messageTypes = require('config').messageTypes;
 var async = require('async');
-var sockets = [];
-// todo move to config
-var port = 5555;
+var config = require('config');
 var _ = require('underscore');
 
-
+var port = 5555;
 var server = moloko.server({
     host: '127.0.0.1',
     port: port
 });
 
+var sockets = [];
 
+// unresolved requests
+var requests=[];
+
+/* CLASSES */
+
+function Registr() {
+    this.requests = [];
+}
+
+Registr.prototype = {
+    get: function() {
+
+    },
+    remove: function() {
+
+    }
+};
 
 /* HELPERS
 =============================================*/
@@ -41,18 +57,52 @@ function authSocket(socket, token, callback) {
 
     if (!socket.tid) {
         console.error('[authSocket] error: socket.tid required');
-        callback(Error('socket.tid required'));
-        return;
+        return callback(Error('socket.tid required'));
     }
 
     Client.getByTid(socket.tid, function(err, client) {
         if (err) {
             console.error('[authSocket] db find error: ', err);
-            callback(err);
-            return;
+            return callback(err);
         }
 
         client.token === token ? callback(null) : callback(Error('403. Auth error, bad token.'));
+    });
+}
+
+function requestOpenOrder(data) {
+    var socket = getSocketByTid(data.tid);
+    
+    if (!socket) {
+        console.error('[SOCKET #requestOpenOrder] socket for subscriber is undefined');
+        return;
+    }
+
+    server.send(socket, {
+        type: config.messageTypes.ORDER_OPEN_REQ,
+        reference: data.order.reference,
+        data: {
+            type: data.data.type,
+            symbol: data.data.symbol,
+            lots: data.data.lots,
+            comment: data.data.comment
+        }
+    });
+}
+
+function requestCloseOrder(tid, data) {
+    var socket = getSocketByTid(tid);
+
+    if (!socket) {
+        console.error('[SOCKET #requestCloseOrder] socket for subscriber is undefined');
+        return;
+    }
+
+    server.send(socket, {
+        type: config.messageTypes.ORDER_CLOSE_REQ,
+        data: {
+            ticket: data.data.ticket
+        }
     });
 }
 
@@ -60,19 +110,23 @@ function authSocket(socket, token, callback) {
 ==============================================*/
 
 function messageBindReq(socket, message) {
+
     authSocket(socket, message.data.token, function(err) {
         if (err) {
             server.send(socket, {
                 type: messageTypes.BIND_CONF,
                 code: 403
             });
-            console.error('Socket auth error', err);
+
+            console.error('AUTH ERROR: terminal tid=%s auth error', message.data.tid, err);
             return;
         }
 
         socket.tid = message.data.tid;
 
         storeSocket(socket, message.data.tid);
+
+        console.log('TERMINAL AUTH: terminal tid=%s successfully authorized', message.data.tid);
 
         server.send(socket, {
                 type: messageTypes.BIND_CONF,
@@ -81,114 +135,6 @@ function messageBindReq(socket, message) {
     });
 }
 
-
-/* Сформировать распоряжения на открытие новых ордеров и
-    закрытие существующих в соответствии с полученной инф. в res ..  */
-
-function handlerMessageForProvider(client, message, callback) {
-
-    callback(null);
-    // var changedOrderInfo, subscribers;
-
-    // function createOrderDecorator(_clients, options, values, done) {
-    //     if (_.isObject(_clients)) {
-    //         _clients = [_clients];
-    //     };
-
-    //     function createOrder(client, next) {
-    //         if (client.type === 'provider') {
-    //             // создать ордер с confirm = true
-    //         }
-
-    //         if (client.type === 'consumer') {
-    //             // создать ордер с confirm == false
-    //             // после послать сигнал на терминал.
-
-    //         }
-    //     }
-
-    //     async.eachSeries(_clients, createOrder, done);
-    // }
-
-
-    // function closeOrderDecorator(_clients, options, values, done) {
-
-    //     // !!!!!!! refactor as createOrderDecorator
-    //     _client.createOrder(values, options, done);
-    // }
-
-
-
-    // async.series([
-    //     // получить различия
-    //     function (next) {
-    //         client.checkOnChange(message.data, function(err, res) {
-    //             if (err) {
-    //                 return next(err);
-    //             }
-
-    //             if (!res.newOrders.length && !res.closedOrders.length) {
-    //                 // breack series with OK
-    //                 return next('ok');
-    //             }
-
-    //             changedOrderInfo = res;
-    //         });
-    //     },
-
-    //     // Создать открытые ордера для провайдера
-    //     function (next) {
-    //         if (!res.newOrders.length) {
-    //             return next();
-    //         }
-
-    //         var options = {confirm: true};
-    //         async.eachSeries(changedOrderInfo.newOrders, createOrderDecorator.bind(this, client, options), next);
-    //     },
-
-    //     // создать закрытые ордера для провайдера
-    //     function (next) {
-    //         if (!res.closedOrders.length) {
-    //             return next();
-    //         }
-
-    //         var options = {confirm: true};
-    //         async.eachSeries(changedOrderInfo.closedOrders, createOrderDecorator.bind(this, client, options), next);
-
-    //     },
-    //     // получить всех подписчиков
-    //     function (next) {
-    //         Client.getSubscribers(function (err, res) {
-    //             if (err) {
-    //                 return next(err);
-    //             }
-
-    //             subscribers = res;
-    //             if (!subscribers.length) {
-    //                 return next('ok');
-    //             }
-
-    //             next();
-    //         });
-    //     },
-        
-    //     // обработать открытые ордера для подписчиков
-    //     function (next) {
-    //         async.eachSeries(subscribers, createOrderDecorator.bind(this, ), next);
-    //     },
-
-    //     // обработать закрытые ордера для подписчиков
-    //     function (next) {
-
-    //     }
-    // ], function(err) {
-    //     if (!err || err === 'ok') {
-    //         return callback();
-    //     }
-
-    //     return callback(err);
-    // });
-}
 
 module.exports.start = function start() {
     server.on('listening', function() {
@@ -211,9 +157,10 @@ module.exports.start = function start() {
 
     server.on('message', function(socket, message) {
 
-        console.log(123123, message.type);
-
         if (message.type === messageTypes.BIND_REQ) {
+
+            console.log('TERMINAL AUTH: terminal tid=%s try to auth', message.data.tid);
+
             messageBindReq(socket, message);
             return;
         }
@@ -224,21 +171,56 @@ module.exports.start = function start() {
             return;
         }
 
-        switch(message.type) {
+        Client.getByTid(socket.tid, function(err, client) {
 
-            case messageTypes.ORDERS_IND:
-            console.log('new message received', message);
-            break;
+            if (err) {
+                console.error('SOCKET ERROR: client is undefined');
+                return;
+            }
 
-            case messageTypes.ORDER_OPEN_REQ:
-            break;
+            switch(message.type) {
 
-            case messageTypes.ORDER_CLOSE_REQ:
-            break;
+                case messageTypes.ORDERS_IND:
 
-            default:
-            break;
-        }
+                if (client.type === 'provider') {
+                    client.handleProviderTerminalMessage(message.data.open_orders, function(err, res) {
+                        if (err) {
+                            console.error('[SOCKET] handleProviderTerminalMessage error', err);
+                            return;
+                        }
+
+                        if (res.length) {
+                            
+                            _.each(res, function(e) {
+                                console.log('[SOCKET] new action "%s" from provider name=%s (id=%s)', e.action, client.name, client._id);
+                                if (e.action === 'create') {
+                                    requestOpenOrder(e);
+                                }
+                                else if (e.action === 'close') {
+                                    requestCloseOrder(e.tid, e.data);
+                                }
+                                
+                            });
+                        }
+                    });
+                }
+                
+                break;
+
+                case messageTypes.ORDER_OPEN_CONF:
+                    client.confirmOrderCreation(message.reference);
+                    console.log('ORDER_OPEN_CONF', message);
+                break;
+
+                case messageTypes.ORDER_CLOSE_CONF:
+                    client.confirmOrderClosing(message.data.ticket);
+                    console.log('ORDER_CLOSE_CONF', message);
+                break;
+
+                default:
+                break;
+            }
+        });
 
         return;
     });

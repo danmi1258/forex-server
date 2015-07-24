@@ -89,9 +89,6 @@ describe('project model', function() {
                     done(err);
                 }
 
-                // console.log(provider._id);
-                // console.log('>>s',consumer);
-
                 consumer.getSubscribtions(function(err, res) {
                     if (err) {
                         console.error(err);
@@ -418,7 +415,6 @@ describe('project model', function() {
                     res.data.should.have.properties({
                         type: values.type,
                         symbol: 'eurUsd',
-                        lots: 1,
                         comment: 'comment',
                         ticket: null
                      });
@@ -499,7 +495,6 @@ describe('project model', function() {
                 };
 
                 provider1.handleProviderTerminalMessage([_order], function(err, res) {
-                    console.log(res);
                     res.length.should.be.equal(2);
                     res[0].action.should.be.equal('create');
                     res[1].action.should.be.equal('create');
