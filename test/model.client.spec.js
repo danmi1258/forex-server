@@ -348,7 +348,6 @@ describe('project model', function() {
                 done();
             });
         });
-
     });
 
 

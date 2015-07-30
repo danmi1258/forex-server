@@ -6,6 +6,7 @@ var _ = require('underscore');
 var Order = require('./order');
 var async = require('async');
 var utils = require('../utils');
+var logger = require('../utils/logger');
 
 
 // !! not var. set is as global;
@@ -354,6 +355,8 @@ Client.methods.setPause = function() {};
 */
 Client.methods.createOrder = function(_values, _options, callback) {
     
+    logger.debug('[Client #createOrder] try to create order for client id=', this._id.toString());
+
     if (arguments.length === 2) {
         callback = arguments[1];
         _options = null;
@@ -400,7 +403,12 @@ Client.methods.createOrder = function(_values, _options, callback) {
             }
             next(null, order);
         }
-    ], callback);
+    ], function(err, res) {
+        if (err) {
+            logger.error('[Client #createOrder] error while order creating', err);
+        }
+        callback(err, res);
+    });
     
 };
 
@@ -430,13 +438,12 @@ Client.methods.confirmOrderCreation = function(reference, callback) {
 
     async.waterfall([
         // get order
-        function (next) {
+        function getOrder(next) {
             if (reference._id) {
-                next(null, reference);
-                return;
+                return next(null, reference);
             }
 
-            self.getByReference(reference, next);
+            Order.getByReference(reference, next);
         },
         // modify order status & openTime
         function (order, next) {
@@ -630,10 +637,9 @@ Client.methods.getOrderByTicket = function(ticket, callback) {
     callback = Array.prototype.slice.call(arguments).pop();
     callback = _.isFunction(callback) ? callback : Function;
 
-    Order.findOne({client: this._id, ticket: ticket}, function(err, res) {
+    Order.findOne({client: this._id.toString(), ticket: ticket}, function(err, res) {
         if(err) {
-            callback(err);
-            return;
+            return callback(err);
         }
 
         callback(null, res);
@@ -741,6 +747,7 @@ Client.methods.hasOpenOrders = function() {
 */
 Client.methods.checkOnChange = function(orderList, options, callback) {
 
+    var self = this;
 
     if (arguments.length === 2) {
         callback = arguments[1];
@@ -750,14 +757,18 @@ Client.methods.checkOnChange = function(orderList, options, callback) {
     }
 
     if (!_.isArray(orderList)) {
-        throw new Error('[Client #checkOnChange] wrong argument error:  orderList must be an array')
+        throw new Error('[Client #checkOnChange] wrong argument error:  orderList must be an array');
     }
+
     //  запрос списка открытых ордеров, принадлежащих данному клиенту.
     this.getOrders({states: options.states}, function(err, orders) {
+
         if (err) {
             callback(err);
             return;
         }
+
+        logger.debug('[Client #checkOnChange] get orders for client id=', self._id.toString, 'orders length = ', orders.length);
 
         var orderTickets = _.pluck(orders, 'ticket') || [];
         var ordersListTickets = _.pluck(orderList, 'ticket');
@@ -825,12 +836,12 @@ Client.methods.handleProviderTerminalMessage = function(openOrders, callback) {
     var changes = null;
 
     async.waterfall([
-        function (next) {
+        function checkOnChange(next) {
             self.checkOnChange(openOrders, {states: [11,12]}, next);
         },
 
         // store changes. open new orders for self if exists
-        function (_res, next) {
+        function openNewOrderSelf(_res, next) {
             changes = _res;
 
             if (!changes.newOrders.length && !changes.closedOrders.length) {
@@ -845,23 +856,25 @@ Client.methods.handleProviderTerminalMessage = function(openOrders, callback) {
             async.eachSeries(changes.newOrders, openOrder, next);
         },
         // close closed orders for self if exists
-        function (next) {
+        function closeOrderSelf(next) {
+
             function closeOrder(order, done) {
                 self.closeOrder(order, {confirm: true}, done);
             }
+
             async.eachSeries(changes.closedOrders, closeOrder, next);
         },
         // open new orders for subscribers. make result hash
-        function (next) {
+        function openOrdersForSubscriber(next) {
             self._handleProviderNewOrders(changes.newOrders, next);
         },
         // close orders for subscribers. make result hash
-        function (_res, next) {
+        function closeOrdersForSubscribers(_res, next) {
             res = _.union(res, _res);
             self._handleProviderClosedOrders(changes.closedOrders, next);
         },
         // union results
-        function (_res, next) {
+        function unionResults(_res, next) {
             res = _.union(res, _res);
             next(null, res);
         }
