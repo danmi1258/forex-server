@@ -355,14 +355,13 @@ Client.methods.setPause = function() {};
 */
 Client.methods.createOrder = function(_values, _options, callback) {
     
-    logger.debug('[Client #createOrder] try to create order for client id=', this._id.toString());
+    logger.debug('[Client #createOrder] start to create new order for client id=', this._id.toString(), 'name=', this.name);
 
     if (arguments.length === 2) {
         callback = arguments[1];
         _options = null;
     }
 
-    var values = _.clone(_values);
     
     var requiredParams = {
         type: 'number',
@@ -370,8 +369,10 @@ Client.methods.createOrder = function(_values, _options, callback) {
         lots: 'number'
     };
 
+    var values = _.clone(_values);
     var keys = Object.keys(requiredParams);
     var self = this;
+    
 
     // validate for required properties
     for (var i = 0; i < keys.length; i++) {
@@ -385,18 +386,35 @@ Client.methods.createOrder = function(_values, _options, callback) {
 
     // validate for the options complience
     if (_options && _options.confirm && !values.ticket) {
-        console.log('warning! try to set order as confirmed but order.ticket does not specified... ');
+        logger.warn('[#createOrder] argumets error. values.ticket does not specified');
     }
 
     values.state = orderStates.CREATING;
     values.client = this._id;
     values.reference = utils.createUniqueKey();
-    
+
     async.waterfall([
-        function (next) {
+        function createOrder(next) {
             new Order(values).save(next);
         },
-        function(order, num, next) {
+        function updateOrderProp(order, num, next) {
+            if (self.type === 'provider') {
+                order.masterOrder = order._id;
+                order.save(function(err, res) {
+                    next(err, res);
+                });
+            }
+            else if (values.masterOrder) {
+                order.masterOrder = values.masterOrder;
+                next(null, order);
+            }
+            else {
+                logger.error();
+                next(Error('[#createOrder] Arguments "values" error. The property "masterOrder" is expected. Client id=', self._id.toString(), ' type=', self.type, ' name=', self.name));
+               // next(null, order);
+            }
+        },
+        function confirmOrderCreation(order, next) {
             if (_options && _options.confirm) {
                 self.confirmOrderCreation(order, next);
                 return;
@@ -634,18 +652,23 @@ Client.methods.getOrders = function(_options, callback) {
         @param {Order} callback.res
 */
 Client.methods.getOrderByTicket = function(ticket, callback) {
-    callback = Array.prototype.slice.call(arguments).pop();
-    callback = _.isFunction(callback) ? callback : Function;
-
     Order.findOne({client: this._id.toString(), ticket: ticket}, function(err, res) {
-        if(err) {
-            return callback(err);
+        if (res === null) {
+            logger.warn('[#getOrderByTicket] order with ticket=', ticket, ' not fund');
         }
-
-        callback(null, res);
+        callback(err, res);
     });
 };
 
+Client.methods.getOrderByMasterOrderId = function(masterOrderId, callback) {
+    Order.findOne({client: this._id.toString(), masterOrder: masterOrderId.toString()}, function(err, res) {
+        if (res === null) {
+            logger.warn('[#getOrderByMasterOrderId] order with masterOrderId=', masterOrderId, 'not fund');
+        }
+
+        callback(err, res);
+    });
+};
 
 /*  Проверить на наличие новых ордеров
     ==================================
@@ -768,7 +791,7 @@ Client.methods.checkOnChange = function(orderList, options, callback) {
             return;
         }
 
-        logger.debug('[Client #checkOnChange] get orders for client id=', self._id.toString, 'orders length = ', orders.length);
+        logger.debug('[Client #checkOnChange] get orders for client id=', self._id.toString(), 'orders length = ', orders.length);
 
         var orderTickets = _.pluck(orders, 'ticket') || [];
         var ordersListTickets = _.pluck(orderList, 'ticket');
@@ -935,34 +958,28 @@ Client.methods._handleProviderClosedOrders = function(orders, callback) {
         throw new Error('[Client #_handleProviderClosedOrders] argument type error: "orders" must be an array');
     }
 
-    function _handleEachOrderClose(client, order, done) {
+    function _handleEachOrderClose(client, providerOrder, done) {
 
-        if (!order.ticket) {
-            console.error('[Client #_handleProviderClosedOrders] error: try to close order but "order.ticket" is undefined or not specified');
-            done();
-            return;
-        }
-
-        client.closeOrder(order.ticket, function(err, _order) {
-            if (err) {
-                console.error('[Client #_handleProviderClosedOrders] order not found error');
-                done();
-                return;
+        async.waterfall([
+            function getOrder(next) {
+                client.getOrderByMasterOrderId(providerOrder._id, next);
+            },
+            function closeOrder(order, next) {
+                client.closeOrder(order.ticket, next);
+            },
+            function makeHash(order, next) {
+                res.push({
+                    subscriber: client,
+                    order: order,
+                    tid: client.tid,
+                    action: 'close',
+                    data: {
+                        ticket: order.ticket
+                    }
+                });
+                next();
             }
-
-            var _res = {
-                subscriber: client,
-                order: _order,
-                tid: client.tid,
-                action: 'close',
-                data: {
-                    ticket: order.ticket
-                }
-            };
-
-            res.push(_res);
-            done(null, res);
-        });
+        ], done);
     }
 
     function _handleEachSubscriber(client, done) {

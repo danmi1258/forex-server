@@ -135,7 +135,8 @@ describe('project model', function() {
                 type: 1,
                 symbol: 'eurUsd',
                 lots: 0.1,
-                comment: 'comment'
+                comment: 'comment',
+                masterOrder: null // providerOrder._id
             };
 
         before(function(done) {
@@ -147,12 +148,13 @@ describe('project model', function() {
                 // update provider
                 function(_order, next) {
                     providerOrder = _order;
+                    values.masterOrder = providerOrder._id;
                     Client.getByTid(provider.tid, next);
                 },
                 // create order for consumer
                 function(res, next) {
                     _provider = res;
-                    provider.createOrder(values, next);
+                    consumer.createOrder(values, next);
                 },
                 function(res, next) {
                     consumerOrder = res;
@@ -172,7 +174,8 @@ describe('project model', function() {
                 symbol: 'eurUsd',
                 lots: 0.1,
                 state: 12,
-                client: _provider._id.toString()
+                client: _provider._id.toString(),
+                masterOrder: providerOrder._id.toString()
             });
         });
 
@@ -182,7 +185,9 @@ describe('project model', function() {
                 symbol: 'eurUsd',
                 lots: 0.1,
                 state: 11,
-                client: _provider._id.toString()
+
+                client: _consumer._id.toString(),
+                masterOrder: providerOrder._id.toString()
             });
         });
 
@@ -204,7 +209,8 @@ describe('project model', function() {
             type: 1,
             symbol: 'eurUsd',
             lots: 0.1,
-            comment: 'comment'
+            comment: 'comment',
+            masterOrder: '55ba6e744f43b9710f6fc009'
         };
 
         before(function(done) {
@@ -283,7 +289,7 @@ describe('project model', function() {
             var values = {
                 name: getRandom(),
                 tid: getRandom(),
-                 type: 'provider'
+                type: 'provider'
             };
 
             Client.create(values, function(err, res) {
@@ -359,7 +365,8 @@ describe('project model', function() {
             type: 1,
             symbol: 'eurUsd',
             lots: 0.01,
-            comment: 'comment'
+            comment: 'comment',
+            masterOrder: '55ba6e744f43b9710f6fc009'
         };
 
         
@@ -442,7 +449,8 @@ describe('project model', function() {
                     type: 1,
                     symbol: 'eurUsd',
                     lots: 0.01,
-                    comment: 'comment'
+                    comment: 'comment',
+                    masterOrder: '55ba6e744f43b9710f6fc009'
                 };
 
                 provider1._handleProviderNewOrders([_order], function(err, res) {
@@ -463,7 +471,8 @@ describe('project model', function() {
                     type: 1,
                     symbol: 'eurUsd',
                     lots: 0.01,
-                    comment: 'comment'
+                    comment: 'comment',
+                    masterOrder: '55ba6e744f43b9710f6fc009'
                 };
 
                 consumer1.createOrder(_order, function(err, order) {
@@ -490,7 +499,8 @@ describe('project model', function() {
                     type: 1,
                     symbol: 'eurUsd',
                     lots: 0.01,
-                    comment: 'comment'
+                    comment: 'comment',
+                    masterOrder: '55ba6e744f43b9710f6fc009'
                 };
 
                 provider1.handleProviderTerminalMessage([_order], function(err, res) {

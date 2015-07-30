@@ -1,4 +1,4 @@
-//process.env.NODE_ENV = 'tests';
+process.env.NODE_ENV = 'tests';
 
 require('../../app/database/adapter');
 

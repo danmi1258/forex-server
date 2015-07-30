@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 var BaseSchema = require('./base');
 extend = require('mongoose-schema-extend');
-
+var logger = require('../utils/logger');
 /**
  * @class Order
  * @extends Default
@@ -12,13 +12,13 @@ var Order = BaseSchema.extend({
 	// аналог ID для терминала. Так как в терминале это единственный уникальный параметр для ордера.
 	ticket: Number,
     // ID of the native terminal (Client)
-    client: {type: String, require: true},
+    client: {type: String, required: true},
     // type of order's direct: buy, sell
-    type: {type: Number, require: true},
+    type: {type: Number, required: true},
     // currency pare example: EUR/USD
-    symbol: {type: String, require: true},
+    symbol: {type: String, required: true},
     // volume
-    lots: {type: Number, require: true},
+    lots: {type: Number, required: true},
     // status: 11-opening, 12-opened, 21-closing, 22-closed
     state: {type: Number, default: 0},
     /* History of the trading. Hash:
@@ -32,7 +32,7 @@ var Order = BaseSchema.extend({
     // self unic reference
     reference: String,
     // id of the master (generating) order
-    relatedOrder: String
+    masterOrder: String
 });
 
 
