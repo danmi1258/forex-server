@@ -32,7 +32,7 @@ var Order = BaseSchema.extend({
     // self unic reference
     reference: String,
     // id of the master (generating) order
-    masterOrder: String
+    masterOrderId: String
 });
 
 

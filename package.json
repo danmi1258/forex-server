@@ -21,6 +21,7 @@
     "async": "^1.2.0",
     "should": "^6.0.3",
     "moloko": "^0.1.0",
-    "gulp-yuidoc": "^0.1.2"
+    "gulp-yuidoc": "^0.1.2",
+    "args-js": "^0.10.7"
   }
 }

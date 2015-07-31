@@ -28,7 +28,7 @@ function Database() {
 
     db.once('open', function() {
         //console.log('[DB]: Connected to DB!');
-        logger.info('[DB]: Connected to DB!');
+        logger.info('[DB]: Connected to DB!', config.uri);
     });
 
     db.on('disconnected', connect);

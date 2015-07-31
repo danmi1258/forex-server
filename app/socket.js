@@ -4,7 +4,7 @@ var messageTypes = require('config').messageTypes;
 var async = require('async');
 var config = require('config');
 var _ = require('underscore');
-
+var logger = require('./utils/logger');
 var port = 5555;
 var server = moloko.server({
     host: '127.0.0.1',
@@ -56,13 +56,13 @@ function authSocket(socket, token, callback) {
 
 
     if (!socket.tid) {
-        console.error('[authSocket] error: socket.tid required');
+        logger.error('[authSocket] Argunets error. Property "socket.tid" required');
         return callback(Error('socket.tid required'));
     }
 
     Client.getByTid(socket.tid, function(err, client) {
         if (err) {
-            console.error('[authSocket] db find error: ', err);
+            logger.error('[authSocket] client with tid=%d not found: ', socket.tid, err);
             return callback(err);
         }
 
@@ -74,7 +74,7 @@ function requestOpenOrder(data) {
     var socket = getSocketByTid(data.tid);
     
     if (!socket) {
-        console.error('[SOCKET #requestOpenOrder] socket for subscriber is undefined');
+        logger.error('[#requestOpenOrder] socket not found. [tid=%s]', data.tid);
         return;
     }
 
@@ -91,12 +91,15 @@ function requestOpenOrder(data) {
 }
 
 function requestCloseOrder(tid, data) {
+    logger.info('[requestCloseOrder] is started');
     var socket = getSocketByTid(tid);
 
     if (!socket) {
-        console.error('[SOCKET #requestCloseOrder] socket for subscriber is undefined');
+        logger.error('[#requestCloseOrder] socket not found. [tid=%s]', tid);
         return;
     }
+
+    logger.debug('Send signal from terminal. [type=%d, ticket=%d]', config.messageTypes.ORDER_CLOSE_REQ, data.data.ticket);
 
     server.send(socket, {
         type: config.messageTypes.ORDER_CLOSE_REQ,
@@ -104,6 +107,8 @@ function requestCloseOrder(tid, data) {
             ticket: data.data.ticket
         }
     });
+
+    logger.info('[requestCloseOrder] completed successfully');
 }
 
 /* MESSAGES HANDLERS
@@ -126,7 +131,7 @@ function messageBindReq(socket, message) {
 
         storeSocket(socket, message.data.tid);
 
-        console.log('TERMINAL AUTH: terminal tid=%s successfully authorized', message.data.tid);
+        logger.info('TERMINAL AUTH: terminal "%d" successfully authorized.', message.data.tid);
 
         server.send(socket, {
                 type: messageTypes.BIND_CONF,
@@ -138,19 +143,19 @@ function messageBindReq(socket, message) {
 
 module.exports.start = function start() {
     server.on('listening', function() {
-        console.log('Server is started listening on port', port);
+        logger.info('Server is started listening on port', port);
     });
 
     server.on('connection', function() {
-        console.log('New connection is accepted');
+        logger.info('New connection is accepted');
     });
 
     server.on('error', function(err) {
-        console.log('Error occured during server socket creation: ', err);
+        logger.error('on error server event', err);
     });
 
     server.on('close', function(socket) {
-        console.log('Client is disconnected');
+        logger.info('socket with tid=%s is disconected', socket.tid);
         removeSocket(socket);
     });
 
@@ -159,7 +164,7 @@ module.exports.start = function start() {
 
         if (message.type === messageTypes.BIND_REQ) {
 
-            console.log('TERMINAL AUTH: terminal tid=%s try to auth', message.data.tid);
+            logger.info('TERMINAL AUTH: terminal tid=%s try to auth', message.data.tid);
 
             messageBindReq(socket, message);
             return;
@@ -174,7 +179,7 @@ module.exports.start = function start() {
         Client.getByTid(socket.tid, function(err, client) {
 
             if (err) {
-                console.error('SOCKET ERROR: client is undefined');
+                logger.error('SOCKET ERROR: client for terminal %s not found', socket.tid);
                 return;
             }
 
@@ -185,14 +190,13 @@ module.exports.start = function start() {
                 if (client.type === 'provider') {
                     client.handleProviderTerminalMessage(message.data.open_orders, function(err, res) {
                         if (err) {
-                            console.error('[SOCKET] handleProviderTerminalMessage error', err);
+                            logger.error('[SOCKET] handleProviderTerminalMessage error', err);
                             return;
                         }
 
                         if (res.length) {
-                            
                             _.each(res, function(e) {
-                                console.log('[SOCKET] new action "%s" from provider name=%s (id=%s)', e.action, client.name, client._id);
+                                logger.info('[SOCKET] new action "%s" from provider name=%s (id=%s)', e.action, client.name, client._id);
                                 if (e.action === 'create') {
                                     requestOpenOrder(e);
                                 }
@@ -208,13 +212,16 @@ module.exports.start = function start() {
                 break;
 
                 case messageTypes.ORDER_OPEN_CONF:
+                    logger.info('ORDER_OPEN_CONF for client [id=%s, name=%s] requested', client._id.toString(), client.name);
+                    logger.debug(message);
                     client.confirmOrderCreation(message.reference);
-                    console.log('ORDER_OPEN_CONF', message);
+                    
                 break;
 
                 case messageTypes.ORDER_CLOSE_CONF:
+                    logger.info('ORDER_CLOSE_CONF for client [id=%s, name=%s] requested', client._id.toString(), client.name);
+                    logger.debug(message);
                     client.confirmOrderClosing(message.data.ticket);
-                    console.log('ORDER_CLOSE_CONF', message);
                 break;
 
                 default:

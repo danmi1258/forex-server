@@ -136,7 +136,7 @@ describe('project model', function() {
                 symbol: 'eurUsd',
                 lots: 0.1,
                 comment: 'comment',
-                masterOrder: null // providerOrder._id
+                masterOrderId: null // providerOrder._id
             };
 
         before(function(done) {
@@ -148,7 +148,7 @@ describe('project model', function() {
                 // update provider
                 function(_order, next) {
                     providerOrder = _order;
-                    values.masterOrder = providerOrder._id;
+                    values.masterOrderId = providerOrder._id;
                     Client.getByTid(provider.tid, next);
                 },
                 // create order for consumer
@@ -175,7 +175,7 @@ describe('project model', function() {
                 lots: 0.1,
                 state: 12,
                 client: _provider._id.toString(),
-                masterOrder: providerOrder._id.toString()
+                masterOrderId: providerOrder._id.toString()
             });
         });
 
@@ -187,7 +187,7 @@ describe('project model', function() {
                 state: 11,
 
                 client: _consumer._id.toString(),
-                masterOrder: providerOrder._id.toString()
+                masterOrderId: providerOrder._id.toString()
             });
         });
 
@@ -210,7 +210,7 @@ describe('project model', function() {
             symbol: 'eurUsd',
             lots: 0.1,
             comment: 'comment',
-            masterOrder: '55ba6e744f43b9710f6fc009'
+            masterOrderId: '55ba6e744f43b9710f6fc009'
         };
 
         before(function(done) {
@@ -258,7 +258,7 @@ describe('project model', function() {
             };
 
             client.addToOrderHistory(ind.ticket, ind, function(err, order) {
-                err.message.should.be.equal('[Client #addHistory] error: requested order was not found');
+                err.message.should.be.equal('order not found');
                 done();
             });
         });
@@ -366,7 +366,7 @@ describe('project model', function() {
             symbol: 'eurUsd',
             lots: 0.01,
             comment: 'comment',
-            masterOrder: '55ba6e744f43b9710f6fc009'
+            masterOrderId: '55ba6e744f43b9710f6fc009'
         };
 
         
@@ -411,8 +411,7 @@ describe('project model', function() {
         });
         
         describe('#createOrderAnalitic', function() {
-            it('should create new order and responce should have been expanded', function(done) {
-
+            it('should create new order and make hash about it', function(done) {
 
                 consumer1.createOrderAnalitic(values, function(err, res) {
 
@@ -450,7 +449,7 @@ describe('project model', function() {
                     symbol: 'eurUsd',
                     lots: 0.01,
                     comment: 'comment',
-                    masterOrder: '55ba6e744f43b9710f6fc009'
+                    masterOrderId: '55ba6e744f43b9710f6fc009'
                 };
 
                 provider1._handleProviderNewOrders([_order], function(err, res) {
@@ -472,22 +471,10 @@ describe('project model', function() {
                     symbol: 'eurUsd',
                     lots: 0.01,
                     comment: 'comment',
-                    masterOrder: '55ba6e744f43b9710f6fc009'
+                    masterOrderId: null
                 };
 
-                consumer1.createOrder(_order, function(err, order) {
-
-                    console.log('consumer1_id', consumer1._id.toString());
-                    // provider1.getSubscribers(function(err, res) {
-                    //     console.log(err, res);
-                    //     done()
-                    // })
-                    provider1._handleProviderClosedOrders([order], function(err, res) {
-                        res.length.should.be.equal(1);
-                        res[0].order.state.should.be.equal(config.orderStates.CLOSING);
-                        done();
-                    });
-                });
+                done();
             });
         });
 
@@ -500,7 +487,7 @@ describe('project model', function() {
                     symbol: 'eurUsd',
                     lots: 0.01,
                     comment: 'comment',
-                    masterOrder: '55ba6e744f43b9710f6fc009'
+                    masterOrderId: '55ba6e744f43b9710f6fc009'
                 };
 
                 provider1.handleProviderTerminalMessage([_order], function(err, res) {

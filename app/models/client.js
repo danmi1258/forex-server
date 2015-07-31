@@ -6,8 +6,9 @@ var _ = require('underscore');
 var Order = require('./order');
 var async = require('async');
 var utils = require('../utils');
+var p$ = utils.print;
 var logger = require('../utils/logger');
-
+var Args = require('args-js');
 
 // !! not var. set is as global;
 extend = require('mongoose-schema-extend');
@@ -124,12 +125,11 @@ Client.statics.create = function(data, callback) {
         @param {Client} callback.client
 */
 Client.statics.getByTid = function(tid, callback) {
-    this.findOne({tid: tid}, function(err, res) {
-        if (err) {
-            callback(err);
-            return;
+    this.model('client').findOne({tid: tid}, function(err, res) {
+        if (res === null) {
+            logger.error('[#getByTid] client with tid=', tid, 'not found');
         }
-        callback(null, res);
+        callback(err, res);
     });
 };
 
@@ -204,7 +204,7 @@ Client.methods.subscribe = function(provider, callback) {
         return;
     }
 
-    this.subscriptions.push(provider._id);
+    this.subscriptions.push(provider._id.toString());
     this.save(function(err, client) {
         callback(err, client);
     });
@@ -308,7 +308,7 @@ Client.methods.getSubscribtions = function(callback) {
         @param {Array} callback.subscribers -clients
     */
 Client.methods.getSubscribers = function(callback) {
-    this.model('client').find({subscriptions: this._id}, callback);
+    this.model('client').find({subscriptions: this._id.toString()}, callback);
 };
 
 
@@ -353,69 +353,56 @@ Client.methods.setPause = function() {};
         @param {Error} callback.err
         @param {Order} callback.res
 */
-Client.methods.createOrder = function(_values, _options, callback) {
-    
+Client.methods.createOrder = function(_values, _options, _callback) {
+
     logger.debug('[Client #createOrder] start to create new order for client id=', this._id.toString(), 'name=', this.name);
 
-    if (arguments.length === 2) {
-        callback = arguments[1];
-        _options = null;
-    }
+    var args = Args([
+        {values: Args.OBJECT | Args.Required},
+        {options: Args.OBJECT | Args.Optional, _default: {}},
+        {callback: Args.FUNCTION | Args.Optional, _default: Function}
+    ], arguments);
 
-    
-    var requiredParams = {
-        type: 'number',
-        symbol: 'string',
-        lots: 'number'
-    };
 
-    var values = _.clone(_values);
-    var keys = Object.keys(requiredParams);
+    // check values on required properties
+    Args([
+        {type: Args.INT | Args.Required},
+        {lots: Args.FLOAT | Args.required},
+        {symbol: Args.STRING | Args.Required},
+        {comment: Args.STRING | Args.required}
+    ], [args.values]);
+
+
+    args.values = _.clone(args.values);
     var self = this;
-    
 
-    // validate for required properties
-    for (var i = 0; i < keys.length; i++) {
-        var key = keys[i];
-
-        if (values[key] === undefined || typeof values[key] !== requiredParams[key]) {
-            callback(new Error('bad param @values'));
-            return;
-        }
-    }
-
-    // validate for the options complience
-    if (_options && _options.confirm && !values.ticket) {
-        logger.warn('[#createOrder] argumets error. values.ticket does not specified');
-    }
-
-    values.state = orderStates.CREATING;
-    values.client = this._id;
-    values.reference = utils.createUniqueKey();
+    args.values.state = orderStates.CREATING;
+    args.values.client = this._id;
+    args.values.reference = utils.createUniqueKey();
 
     async.waterfall([
         function createOrder(next) {
-            new Order(values).save(next);
+            new Order(args.values).save(next);
         },
         function updateOrderProp(order, num, next) {
             if (self.type === 'provider') {
-                order.masterOrder = order._id;
+                order.masterOrderId = order._id.toString();
                 order.save(function(err, res) {
                     next(err, res);
                 });
             }
-            else if (values.masterOrder) {
-                order.masterOrder = values.masterOrder;
+            else if (args.values.masterOrderId) {
+                order.masterOrderId = args.values.masterOrderId;
                 next(null, order);
             }
             else {
-                logger.error();
-                next(Error('[#createOrder] Arguments "values" error. The property "masterOrder" is expected. Client id=', self._id.toString(), ' type=', self.type, ' name=', self.name));
+                logger.error('[createOrder] Arguments error. Expected property @masterOrderId');
+                next(Error('Argument error. Expected property @masterOrderId'));
                // next(null, order);
             }
         },
         function confirmOrderCreation(order, next) {
-            if (_options && _options.confirm) {
+            if (args.options.confirm) {
                 self.confirmOrderCreation(order, next);
                 return;
             }
@@ -424,8 +411,11 @@ Client.methods.createOrder = function(_values, _options, callback) {
     ], function(err, res) {
         if (err) {
             logger.error('[Client #createOrder] error while order creating', err);
+        } else {
+            logger.info('[Client #createOrder] new order create successfully');
+            logger.debug('client %s, order %s', p$(self), p$(res));
         }
-        callback(err, res);
+        args.callback(err, res);
     });
     
 };
@@ -490,56 +480,51 @@ Client.methods.confirmOrderCreation = function(reference, callback) {
 
     @method closeOrder
     @async
-    @param orderTicket {Integer}
+    @param order {Order}
     @param options {Object}
         @param {Boolean} options.confirm - if true then closed order will be confirmed imediatly
     @param callback {Function}
         @param {Error} callback.err
         @param {Order} callback.res
 */
-Client.methods.closeOrder = function(orderTicket, _options, callback) {
+Client.methods.closeOrder = function(order, _options, _callback) {
 
-    if (arguments.length === 2) {
-        callback = arguments[1];
-        _options = null;
-    }
+    logger.info('[closeOrder] called. [client=%s, order=%s]', p$(this), p$(order));
 
+    var callback, options;
     var self = this;
+    
+    if (arguments.length === 2) {
+        callback = _options;
+        options = {};
+    } else {
+        callback = _callback;
+        options = _options;
+    }
 
     async.waterfall([
         function(next) {
-            if (orderTicket._id) {
-                next(null, orderTicket);
-                return;
-            }
-
-            self.getOrderByTicket(orderTicket, function(err, order) {
-                if (err) {
-                    next(new Error('order not found error'));
-                    return;
-                }
-
-
-                if (!order) {
-                    next(new Error('[Client closeOrder] warning: Try to close order but it was not found. orderTicket='));
-                    return;
-                }
-
-                next(null, order);
-            });
-        },
-        function(order, next) {
             order.state = orderStates.CLOSING;
             order.save(next);
         },
         function(order, num, next) {
-            if (_options && _options.confirm) {
+            if (options.confirm) {
+                logger.info('[closeOrder] confirm order closing');
                 self.confirmOrderClosing(order, next);
             } else {
                 next(null, order);
             }
         }
-    ], callback);
+    ], function(err, order) {
+        if (err) {
+            logger.error('[closeOrder] error closing', err);
+        } else {
+            logger.info('[closeOrder] complit successfully');
+            logger.debug('[client id=%s], [order=%s]', p$(self), p$(order));
+        }
+
+        callback(err, order);
+    });
 };
 
 
@@ -652,21 +637,29 @@ Client.methods.getOrders = function(_options, callback) {
         @param {Order} callback.res
 */
 Client.methods.getOrderByTicket = function(ticket, callback) {
+    var self = this;
+
     Order.findOne({client: this._id.toString(), ticket: ticket}, function(err, res) {
         if (res === null) {
-            logger.warn('[#getOrderByTicket] order with ticket=', ticket, ' not fund');
+            logger.warn('[#getOrderByTicket] order not fund');
+            logger.debug('[client %s], [orderTicket=%d]', p$(self), ticket);
+            callback(new Error('order not found'));
         }
-        callback(err, res);
+        else {
+            callback(err, res);
+        }
     });
 };
 
 Client.methods.getOrderByMasterOrderId = function(masterOrderId, callback) {
-    Order.findOne({client: this._id.toString(), masterOrder: masterOrderId.toString()}, function(err, res) {
+    Order.findOne({client: this._id.toString(), masterOrderId: masterOrderId.toString()}, function(err, res) {
         if (res === null) {
-            logger.warn('[#getOrderByMasterOrderId] order with masterOrderId=', masterOrderId, 'not fund');
+            logger.error('[#getOrderByMasterOrderId] order with masterOrderId=', masterOrderId, 'not found');
+            callback(Error('Order not found'));
         }
-
-        callback(err, res);
+        else {
+            callback(err, res);
+        }
     });
 };
 
@@ -791,8 +784,6 @@ Client.methods.checkOnChange = function(orderList, options, callback) {
             return;
         }
 
-        logger.debug('[Client #checkOnChange] get orders for client id=', self._id.toString(), 'orders length = ', orders.length);
-
         var orderTickets = _.pluck(orders, 'ticket') || [];
         var ordersListTickets = _.pluck(orderList, 'ticket');
         var newOrders = [], closedOrders = [];
@@ -860,7 +851,7 @@ Client.methods.handleProviderTerminalMessage = function(openOrders, callback) {
 
     async.waterfall([
         function checkOnChange(next) {
-            self.checkOnChange(openOrders, {states: [11,12]}, next);
+            self.checkOnChange(openOrders, {states: [11, 12]}, next);
         },
 
         // store changes. open new orders for self if exists
@@ -868,12 +859,21 @@ Client.methods.handleProviderTerminalMessage = function(openOrders, callback) {
             changes = _res;
 
             if (!changes.newOrders.length && !changes.closedOrders.length) {
+                // exit from handler
                 callback(null, res);
-                return;
             }
-
-            function openOrder(order, done) {
-                self.createOrder(order, {confirm: true}, done);
+            else {
+                // handle changes
+                next();
+            }
+        },
+        function openSelfOrder(next) {
+            
+            function openOrder(data, done) {
+                self.createOrder(data, {confirm: true}, function(err, order) {
+                    data.masterOrderId = order._id.toString();
+                    done(err, data);
+                });
             }
 
             async.eachSeries(changes.newOrders, openOrder, next);
@@ -945,27 +945,28 @@ Client.methods.handleProviderTerminalMessage = function(openOrders, callback) {
 
     @method _handleProviderClosedOrders
     @async
-    @param orders {Array} list of the orders (instance of Order) to close
+    @param masterOrders {Array} list of the mater orders (instance of Order) to close
     @param callback {Function}
         @param {Error} callback.err
         @param {Array} callback.res see above
 */
-Client.methods._handleProviderClosedOrders = function(orders, callback) {
+Client.methods._handleProviderClosedOrders = function(masterOrders, callback) {
+
+    logger.info('[_handleProviderClosedOrders] is started. [client=%s]', p$(this));
+
     var self = this;
     var res = [];
 
-    if (!_.isArray(orders)) {
-        throw new Error('[Client #_handleProviderClosedOrders] argument type error: "orders" must be an array');
-    }
+    function _handleEachOrderClose(client, masterOrder, done) {
 
-    function _handleEachOrderClose(client, providerOrder, done) {
+        logger.info('[_handleEachOrderClose] start to close order for client (', client.name, client._id.toString(), ')');
 
         async.waterfall([
             function getOrder(next) {
-                client.getOrderByMasterOrderId(providerOrder._id, next);
+                client.getOrderByMasterOrderId(masterOrder._id, next);
             },
             function closeOrder(order, next) {
-                client.closeOrder(order.ticket, next);
+                client.closeOrder(order, next);
             },
             function makeHash(order, next) {
                 res.push({
@@ -979,11 +980,18 @@ Client.methods._handleProviderClosedOrders = function(orders, callback) {
                 });
                 next();
             }
-        ], done);
+        ], function(err) {
+            if (err) {
+                logger.error('[_handleEachOrderClose] close order error', err);
+            }
+
+            logger.info('[_handleEachOrderClose] order ', res.order._id.toString(), ' for client (', client._id.toString(),') closed successfully');
+            done();
+        });
     }
 
     function _handleEachSubscriber(client, done) {
-        async.eachSeries(orders, _handleEachOrderClose.bind(this, client), done);
+        async.eachSeries(masterOrders, _handleEachOrderClose.bind(this, client), done);
     }
 
     async.waterfall([
@@ -1045,6 +1053,7 @@ Client.methods.createOrderAnalitic = function(data, callback) {
      // todo сделать вычисление лота на основе данных клиента.
     data.ticket = null;
     data.lots = 0.01;
+    data.masterOrderId = data.masterOrderId;
 
     this.createOrder(data, function(_err, order) {
         if (err) {
