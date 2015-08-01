@@ -7,6 +7,7 @@ var Order = require('./order');
 var async = require('async');
 var utils = require('../utils');
 var p$ = utils.print;
+var lp$ = utils.logPrefix;
 var logger = require('../utils/logger');
 var Args = require('args-js');
 
@@ -355,7 +356,8 @@ Client.methods.setPause = function() {};
 */
 Client.methods.createOrder = function(_values, _options, _callback) {
 
-    logger.debug('[Client #createOrder] start to create new order for client id=', this._id.toString(), 'name=', this.name);
+    var lp = lp$('createOrder');
+    logger.info(lp, 'Start to create new order.', p$(this));
 
     var args = Args([
         {values: Args.OBJECT | Args.Required},
@@ -410,10 +412,9 @@ Client.methods.createOrder = function(_values, _options, _callback) {
         }
     ], function(err, res) {
         if (err) {
-            logger.error('[Client #createOrder] error while order creating', err);
+            logger.error(lp, 'Error while order creating.', err);
         } else {
-            logger.info('[Client #createOrder] new order create successfully');
-            logger.debug('client %s, order %s', p$(self), p$(res));
+            logger.info(lp, 'New order created successfully. [order=%s]', p$(res));
         }
         args.callback(err, res);
     });
@@ -952,7 +953,7 @@ Client.methods.handleProviderTerminalMessage = function(openOrders, callback) {
 */
 Client.methods._handleProviderClosedOrders = function(masterOrders, callback) {
 
-    logger.info('[_handleProviderClosedOrders] is started. [client=%s]', p$(this));
+    logger.info('[_handleProviderClosedOrders] is started.', p$(this));
 
     var self = this;
     var res = [];

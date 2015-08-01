@@ -13,8 +13,12 @@ module.exports.print = function(object) {
 
     switch(object._title) {
         case 'client':
-            return '[name=' + object.name + ', id=' + object._id.toString() + ']';
+            return '{client: {name:' + object.name + ', id:' + object._id.toString() + '}}';
         default:
             return '[id=' + object._id.toString() + ']';
     }
+};
+
+module.exports.logPrefix = function(logPrefixName) {
+    return '<' + Math.floor(Math.random() * 100000) + '>[' + logPrefixName + ']:';
 };

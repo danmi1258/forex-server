@@ -17,8 +17,9 @@ gulp.task( 'default', [ 'server:start' ], function() {
 });
 
 
+gulp.docFiles = [];
 gulp.task('doc', function() {
-    gulp.src('./app/models/*')
+    gulp.src(['./app/models/*', 'app/routers/*'])
         .pipe(yuidoc())
         .pipe(gulp.dest('./doc'));
 });
