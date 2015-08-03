@@ -4,7 +4,8 @@ var logger = require('../utils/logger');
 var Args = require('args-js');
 var config = require('config');
 var _ = require('underscore');
-var Socket = require('../socket');
+// var Socket = require('../socket');
+var socketProxy = require('../socketProxy');
 var utils = require('../utils');
 var p$ = utils.print;
 var lp$ = utils.logPrefix;
@@ -141,8 +142,8 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
         /* send ORDER_OPEN_REQ signal to the terminal */
         if (args.options.confirm) {
             logger.info(lp, 'send request to the terminal');
-            var socket = Socket.getSocketByTid(args.client.tid);
-            var socketServer = Socket.getServer();
+            var socket = socketProxy.getSocketByTid(args.client.tid);
+            var socketServer = socketProxy.getServer();
 
             if (!socket) {
                 logger.warn('terminal with tid=(%d) is offline', args.client.tid);
@@ -206,8 +207,8 @@ Order.static.closeOrder = function(_client, _order, _options, _callback) {
         /* send ORDER_OPEN_REQ signal to the terminal */
         if (args.options.confirm) {
             logger.info(lp, 'send request on closing to the terminal');
-            var socket = Socket.getSocketByTid(args.client.tid);
-            var socketServer = Socket.getServer();
+            var socket = socketProxy.getSocketByTid(args.client.tid);
+            var socketServer = socketProxy.getServer();
 
             if (!socket) {
                 logger.warn('terminal with tid=(%d) is offline', args.client.tid);

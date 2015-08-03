@@ -1,20 +1,21 @@
 var moloko = require('moloko');
-var Client = require('./models/client').Client;
 var messageTypes = require('config').messageTypes;
 var async = require('async');
 var config = require('config');
 var _ = require('underscore');
 var logger = require('./utils/logger');
 var port = 5555;
+var socketProxy = require('./socketProxy');
+var dbMethods = require('./models/methods');
 var server = moloko.server({
     host: '127.0.0.1',
     port: port
 });
 
-var sockets = [];
+socketProxy.setServer(server);
+socketProxy.setSocketGetter(getSocketByTid.bind(this));
 
-// unresolved requests
-var requests=[];
+var sockets = [];
 
 /* CLASSES */
 
@@ -60,7 +61,7 @@ function authSocket(socket, token, callback) {
         return callback(Error('socket.tid required'));
     }
 
-    Client.getByTid(socket.tid, function(err, client) {
+    dbMethods.getClientByTid(socket.tid, function(err, client) {
         if (err) {
             logger.error('[authSocket] client with tid=%d not found: ', socket.tid, err);
             return callback(err);
@@ -176,7 +177,7 @@ module.exports.start = function start() {
             return;
         }
 
-        Client.getByTid(socket.tid, function(err, client) {
+        dbMethods.getClientByTid(socket.tid, function(err, client) {
 
             if (err) {
                 logger.error('SOCKET ERROR: client for terminal %s not found', socket.tid);
