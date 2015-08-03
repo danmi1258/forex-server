@@ -12,8 +12,11 @@ module.exports.print = function(object) {
     }
 
     switch(object._title) {
-        case 'client':
-            return '{client: {name:' + object.name + ', id:' + object._id.toString() + '}}';
+        case 'provider':
+            return '{provider: {name:' + object.name + ', id:' + object._id.toString() + '}}';
+        case 'subscriber':
+            return '{subscriber: {name:' + object.name + ', id:' + object._id.toString() + '}}';
+     
         default:
             return '[id=' + object._id.toString() + ']';
     }

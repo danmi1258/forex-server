@@ -1,44 +1,53 @@
 var express = require('express');
-//var teams = require('./teams');
-//var auth = require('./auth');
-//var user = require('../app/controllers/users');
-var router = express.Router();
-var Client = require('../models/client');
-var Order = require('../models/order');
+var router = new express.Router();
+var providerRoutes = require('./providerRoutes');
+var subscriberRoutes = require('./subscriberRoutes');
+var terminalRoutes = require('./terminalRoutes');
+var orderRoutes = require('./orderRoutes');
+
+/**** P R O V I D E R    R O U T E S **************************/
+
+router.get('/providers', providerRoutes.GET.providers);
+router.get('/providers/:id', providerRoutes.GET.provider);
+router.get('/providers/:id/orders', providerRoutes.GET.orders);
+router.get('/providers/:id/subscribers', providerRoutes.GET.subscribers);
+
+router.post('/providers', providerRoutes.POST.provider);
+router.post('/providers/:id/openOrder', providerRoutes.POST.openOrder);
+// router.post('/providers/:id/stopSubscriptions', providerRoutes.POST.stopSubscriptions);
+
+//router.put('/providers/:id', providerRoutes.PUT.provider);
+
+// router.delete('/providers', providerRoutes.DELETE.provider);
 
 
-/* Teams route */
+/**** S U B S C R I B E R    R O U T E S  *********************/
 
-router.get('/terminals', function(req, res, next) {
+router.get('/subscribers', subscriberRoutes.GET.subscribers);
+router.get('/subscribers/:id', subscriberRoutes.GET.subscriber);
+router.get('/subscribers/:id/orders', subscriberRoutes.GET.orders);
+router.get('/subscribers/:id/subscriptions', subscriberRoutes.GET.subscriptions);
 
-	Client.find({}, function(err, terminals) {
-		if (err) return next(err);
+router.post('/subscribers', subscriberRoutes.POST.subscriber);
+router.post('/subscribers/:id/subscribe', subscriberRoutes.POST.subscribe);
+router.post('/subscribers/:id/unsubscribe', subscriberRoutes.POST.unsubscribe);
 
-		res.json(terminals);
-	});
-});
-
-router.post('/terminals', function(req, res, next) {
-	Client.create(req.body, function(err, e) {
-		if (err) return next(err);
-		res.json(e);
-	});
-});
-
-router.get('/terminals/:subscriber/subscriptions', function(req, res, next) {
+// router.put('/subscribers/:id/stopSubscription', subscriberRoutes.POST.stopSubscriptions);
 
 
-	Client.findById(req.params.subscriber, function(err, terminal) {
+/**** O R D E R S    R O U T E S ******************************/
 
-		if (err) return next(err);
+router.get('/orders');
+router.get('/orders/:id');
 
-		if (!terminal) return next(new Error(404, 'not found error'));
+router.post('/orders/');
+router.post('/orders/:id/close');
 
-		Client.find({subscriptions: {$in: terminal.subscriptions}}, function(err, s) {
-	if (err) return next (err);
-			res.json(s);
-		});
-	});
-});
+router.put('/orders/:id', orderRoutes.PUT.order);
+
+/***  TERMINALS   *********************************************/
+
+// router.get('/terminals/', terminalRoutes.GET.terminals);
+
 
 module.exports = router;

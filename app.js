@@ -45,7 +45,7 @@ socket.start();
 
 /* auth route entry point */
 
-app.use('/fx/api', apiRoutes);
+app.use('/api', apiRoutes);
 
 //app.get('/',function(req, res, next) {
 //    res.json({route: 'no route'});
@@ -55,14 +55,19 @@ app.use('/fx/api', apiRoutes);
  /* ***********************/
 
 /* 404 route note found */
-app.use(function(req, res, next) {
+app.use(function(req, res) {
     res.status(404).json({error: 404, message: 'route not found'});
 });
 
 /* error handler */
 app.use(function(err, req, res, next) {
-    logger.error(err.stack);
-    res.status(err.status || 500).json(err);
+    logger.error(err.message);
+    res.status(err.status || 500).json({
+        status: err.status,
+        name: err.name,
+        message: err.message
+    });
+    next();
 });
 
 /* ***********************/

@@ -1,5 +1,5 @@
 var moloko = require('moloko');
-var Client = require('./models/client');
+var Client = require('./models/client').Client;
 var messageTypes = require('config').messageTypes;
 var async = require('async');
 var config = require('config');
@@ -234,7 +234,12 @@ module.exports.start = function start() {
 };
 
 
-// exports for tests
+module.exports.getServer = function() {
+    return server;
+};
+
+module.exports.getSocketByTid = getSocketByTid;
+
 
 module.exports.tests = {
     getSocketByTid: getSocketByTid,
