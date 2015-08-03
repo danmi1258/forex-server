@@ -188,28 +188,16 @@ module.exports.start = function start() {
 
                 case messageTypes.ORDERS_IND:
 
-                if (client.type === 'provider') {
-                    client.handleProviderTerminalMessage(message.data.open_orders, function(err, res) {
+                if (client._title === 'provider') {
+                    client.checkOnChanges(message.data, function(err, res) {
                         if (err) {
-                            logger.error('[SOCKET] handleProviderTerminalMessage error', err);
+                            logger.error(err);
                             return;
                         }
-
-                        if (res.length) {
-                            _.each(res, function(e) {
-                                logger.info('[SOCKET] new action "%s" from provider name=%s (id=%s)', e.action, client.name, client._id);
-                                if (e.action === 'create') {
-                                    requestOpenOrder(e);
-                                }
-                                else if (e.action === 'close') {
-                                    requestCloseOrder(e.tid, e.data);
-                                }
-                                
-                            });
-                        }
+                        
                     });
                 }
-                
+
                 break;
 
                 case messageTypes.ORDER_OPEN_CONF:
