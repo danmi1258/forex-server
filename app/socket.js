@@ -187,14 +187,15 @@ module.exports.start = function start() {
             switch(message.type) {
 
                 case messageTypes.ORDERS_IND:
-
                 if (client._title === 'provider') {
-                    client.checkOnChanges(message.data, function(err, res) {
+                    client.checkOnChanges(message.data.open_orders, function(err, res) {
                         if (err) {
                             logger.error(err);
-                            return;
                         }
-                        
+                        else {
+                            res.newOrders ? async.eachSeries(res.newOrders, client.openOrder.bind(client)) : 0;
+                            res.closedOrders ? async.eachSeries(res.closedOrders, client.closeOrder.bind(client)) :  0;
+                        }
                     });
                 }
 

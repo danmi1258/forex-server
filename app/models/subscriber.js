@@ -53,7 +53,7 @@ Subscriber.statics.handleMasterOrderOpen = function(_provider, _masterOrder, _ca
             }
             else {
                 var orderValues = {
-                    lots: 1,
+                    lots: 0.02,
                     type: args.masterOrder.type,
                     symbol: args.masterOrder.symbol,
                     comment: 'master order clone',

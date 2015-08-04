@@ -26,8 +26,50 @@ var Pr = Provider.methods;
 /* Public methods
 #################*/
 
-Provider.statics.checkOnChanges = function(tData, callback) {
+Provider.methods.checkOnChanges = function(tData, callback) {
 
+    /* specify aruments */
+    try {
+        var args = new Args([
+            {tData: Args.ARRAY | Args.Required},
+            {options: Args.OBJECT | Args.Optional},
+            {callback: Args.FUNCTION | Args.Optional, _default: Function}
+        ], arguments);
+    }
+    catch(err) {
+        logger.error(err);
+        return callback(err);
+    }
+
+
+    //  запрос списка открытых ордеров, принадлежащих данному клиенту.
+    Order.find({client: this._id.toString(), state: config.orderStates.CREATED}, function(err, orders) {
+
+        if (err) {
+            callback('db error', err);
+            return;
+        }
+
+        var orderTickets = _.pluck(orders, 'ticket') || [];
+        var ordersListTickets = _.pluck(args.tData, 'ticket');
+        var newOrders = [], closedOrders = [];
+        
+        // список ордеров, которые были созданы с момента последнего обращения
+        if (ordersListTickets.length){
+            newOrders = _.filter(args.tData, function(e) {
+                return orderTickets.indexOf(e.ticket) === -1;
+            });
+        }
+
+        // список ордеров, которые были закрыты с момента последнего обращения
+        if (ordersListTickets) {
+            closedOrders = _.filter(orders, function(e) {
+                return ordersListTickets.indexOf(e.ticket) === -1;
+            });
+        }
+
+        callback(null, {newOrders: newOrders, closedOrders: closedOrders});
+    });
 };
 
 
@@ -42,12 +84,15 @@ Pr.openOrder = function(values, callback) {
     logger.info(lp, 'begin create new order.', p$(this));
 
     Order.openOrder(self, values, {confirm: false}, function(err, order) {
-        Subscriber.handleMasterOrderOpen(self, order, Function);
+        if (err) {
+            logger.error(lp, 'open order error', err);
+        }
+        else {
+            Subscriber.handleMasterOrderOpen(self, order, Function);
+            logger.info(lp, 'complete successfully', p$(order));
+        }
 
-        err ? logger.error(lp, 'complete with error', err) :
-              logger.info(lp, 'complete successfully', p$(order));
-
-        callback(err, order);
+        callback(null, order);
     });
 };
 

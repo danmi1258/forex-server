@@ -18,7 +18,7 @@ require('mongoose-schema-extend');
  */
 var Order = BaseSchema.extend({
     // уникальный номер ордера в терминале
-    ticket: {type: Number, unique: true},
+    ticket: Number,
     // ID of the native terminal (Client)
     client: {type: String, required: true},
     // type of order's direct: buy, sell
@@ -113,7 +113,7 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
             {type: Args.INT | Args.Required},
             {lots: Args.FLOAT | Args.Required},
             {symbol: Args.STRING | Args.Required},
-            {comment: Args.STRING | Args.Required},
+            {comment: Args.STRING | Args.Optional, _default: "comment"},
             {ticket: Args.INT | (args.client._title === 'provider' ? Args.Required : Args.Optional)},
             {masterOrderId: Args.STRING | (args.client._title === 'provider' ? Args.Optional : Args.Required)}
         ], [args.values]);
@@ -155,7 +155,7 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
                         type: res.type,
                         symbol: res.symbol,
                         lots: res.lots,
-                        comment: res.comment
+                        comment: res.comment || "default comment"
                     }
                 });
                 logger.info(lp, 'The request is sent successfully');
@@ -167,7 +167,7 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
     });
 };
 
-Order.static.closeOrder = function(_client, _order, _options, _callback) {
+Order.statics.closeOrder = function(_client, _order, _options, _callback) {
     var lp = lp$('Order#openOrder');
     logger.info(lp, 'begin close order', p$(_client));
 
@@ -189,7 +189,7 @@ Order.static.closeOrder = function(_client, _order, _options, _callback) {
     try {
         new Args([
             {ticket: Args.INT | Args.Required}
-        ], arguments);
+        ], [args.order]);
     }
     catch(err) {
         logger.error(err);
