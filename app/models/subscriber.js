@@ -99,7 +99,7 @@ Subscriber.statics.handleMasterOrderClose = function(_provider, _masterOrder, _c
 
     async.waterfall([
         function getRelatedOrders(next) {
-            Order.find({masterOrder: _masterOrder._id.toString()}, next);
+            Order.find({masterOrderId: _masterOrder._id.toString()}, next);
         },
         function processToChangeStatus(res, next) {
             if (!res.length) {
@@ -188,6 +188,75 @@ Su.unsubscribe = function(providerId, callback) {
         callback(null, self);
     }
 };
+
+Su.confirmOrderCreation = function(_ref, _ticket, _callback) {
+
+    try {
+        var args = new Args([
+            {ref: Args.STRING | Args.Required},
+            {ticket: Args.INT | Args.Required},
+            {callback: Args.FUNCTION | Args.Optional, _default: function() {}}
+        ], arguments);
+    }
+    catch(err) {
+        logger.error(err);
+        return args._callback(err);
+    }
+
+    var lp = lp$('confirmOrderCreation');
+    logger.info('lp', 'begin to confirm order opening.', p$(this), 'ref =', args.ref);
+
+    Order.findOne({reference: args.ref}, function(err, order) {
+        if (err) {
+            logger.error(lp, 'db error', err);
+            return args.callback(null);
+        }
+
+        order.state = config.orderStates.CREATED;
+        order.ticket = args.ticket;
+        order.save(function(err, res) {
+            err ? logger.error(lp, 'complite with error', err) :
+                  logger.info(lp, 'complite successfully. Order.ticket=', res.ticket);
+            args.callback(null, res);
+        });
+    });
+};
+
+Su.confirmOrderClosing = function(_ticket, _callback) {
+    var lp = lp$('confirmOrderClosing');
+    logger.info(lp, 'begin order closing for client', p$(this), 'ticket=', _ticket);
+
+    try {
+        var args = new Args([
+            {ticket: Args.INT | Args.Required},
+            {callback: Args.FUNCTION | Args.Optional, _default: function() {}}
+        ], arguments);
+    }
+    catch(err) {
+        logger.error(err);
+        return args._callback(err);
+    }
+
+    Order.findOne({ticket: args.ticket}, function(err, res) {
+        if (err) {
+            logger.error(lp, 'db error. Exit', err);
+            return args.callback(null, res);
+        }
+
+        if (!res) {
+            console.error(lp, 'try to change state from order, but it not found by ticket=', args.ticket);
+            args.callback(null);
+        }
+
+        res.state = config.orderStates.CLOSED;
+        res.save(function(err, res) {
+            err ? logger.error(lp, 'complite with error', err) :
+                  logger.info(lp, 'complite successfully');
+            args.callback(null, res);
+        });
+    });
+};
+
 
 
 /**** E X P O R T S  ********************************************/

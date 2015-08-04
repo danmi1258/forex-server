@@ -151,6 +151,7 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
             else {
                 socketServer.send(socket, {
                     type: config.messageTypes.ORDER_OPEN_REQ,
+                    reference: res.reference,
                     data: {
                         type: res.type,
                         symbol: res.symbol,
@@ -185,17 +186,6 @@ Order.statics.closeOrder = function(_client, _order, _options, _callback) {
         return _callback(err);
     }
 
-    /* validate order prop. */
-    try {
-        new Args([
-            {ticket: Args.INT | Args.Required}
-        ], [args.order]);
-    }
-    catch(err) {
-        logger.error(err);
-        return _callback(err);
-    }
-
     args.order.state = args.options.confirm ? config.orderStates.CLOSING : config.orderStates.CLOSED;
 
     args.order.save(function(err, res) {
@@ -217,7 +207,8 @@ Order.statics.closeOrder = function(_client, _order, _options, _callback) {
                 socketServer.send(socket, {
                     type: config.messageTypes.ORDER_CLOSE_REQ,
                     data: {
-                        ticket: args.order.ticket
+                        ticket: args.order.ticket,
+                        lots: args.order.lots
                     }
                 });
                 logger.info(lp, 'The request is sent successfully');

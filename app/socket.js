@@ -204,7 +204,7 @@ module.exports.start = function start() {
                 case messageTypes.ORDER_OPEN_CONF:
                     logger.info('ORDER_OPEN_CONF for client [id=%s, name=%s] requested', client._id.toString(), client.name);
                     logger.debug(message);
-                    client.confirmOrderCreation(message.reference);
+                    client.confirmOrderCreation(message.reference, message.data.ticket);
                     
                 break;
 
