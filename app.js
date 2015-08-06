@@ -4,8 +4,10 @@ var database = require('./app/database/adapter');
 var path = require('path');
 var config = require('config').get('server');
 var bodyParser = require('body-parser');
+var passport = require('./app/utils/passport');
+var session = require('express-session');
 
-//var auth = require('./app/middleware/auth');
+var auth = require('./app/middleware/auth').auth;
 //var api = require('./app/routes');
 
 //var errors = require('./errors');
@@ -20,6 +22,13 @@ var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'app/static/client')));
+app.use(session({
+    secret: 'afk;j4fhdfuhekl',
+    resave: true,
+    saveUninitialized: true
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 socket.start();
 
@@ -29,27 +38,16 @@ socket.start();
 /* M I D D L E W A R E
  /* ***********************/
 
-/* set current user */
-//app.use(setCurUser);
-
-/* set current team */
-//app.all('/:id/*', require('./middleware/currentTeam'));
-
+app.use(auth);
 
 /* ***********************/
 /* R O U T E S
  /* ***********************/
 
 /* api route entry point */
-//app.use('/fx', auth.auth());
-
-/* auth route entry point */
-
 app.use('/api', apiRoutes);
 
-//app.get('/',function(req, res, next) {
-//    res.json({route: 'no route'});
-//})
+
 /* ***********************/
 /* E R R O R S
  /* ***********************/

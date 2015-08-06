@@ -4,6 +4,13 @@ var providerRoutes = require('./providerRoutes');
 var subscriberRoutes = require('./subscriberRoutes');
 var terminalRoutes = require('./terminalRoutes');
 var orderRoutes = require('./orderRoutes');
+var authRoutes = require('./authRoutes');
+
+/**** AUTH    R O U T E S *************************************/
+
+router.post('/login', authRoutes.login);
+
+// router.get('/logout', passport.logout);
 
 /**** P R O V I D E R    R O U T E S **************************/
 

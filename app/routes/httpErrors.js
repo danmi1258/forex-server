@@ -67,7 +67,7 @@ exports.routNotFound = function() {
 /* 422 Unprocessable Entity
 * -------------------------*/
 
-exports.notFoundError = function(message) {
+exports.UnprocessableEntity = function(message) {
     return new HttpError(422, 'UnprocessableEntity', message || 'Unprocessable entity');
 };
 

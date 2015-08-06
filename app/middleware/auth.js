@@ -1,20 +1,7 @@
-var _ = require('underscore');
+var UnauthorizedError = require('../routes/httpErrors').Unauthorized;
 
 module.exports.auth = function(req, res, next) {
-    console.log('>>', req.query, req.params);
-    next();
+    req.isAuthenticated() || req.originalUrl === '/api/login' ?
+        next() :
+        res.json(new UnauthorizedError());
 };
-
-
-module.exports.admin = function(req, res, next) {
-
-};
-
-module.exports.consumer = function(req, res, next) {
-
-};
-
-module.exports.provider = function(req, res, next) {
-
-};
-
