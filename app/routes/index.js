@@ -4,11 +4,12 @@ var providerRoutes = require('./providerRoutes');
 var subscriberRoutes = require('./subscriberRoutes');
 var terminalRoutes = require('./terminalRoutes');
 var orderRoutes = require('./orderRoutes');
-var authRoutes = require('./authRoutes');
+// var authRoutes = require('./authRoutes');
+var passport = require('../utils/passport');
 
 /**** AUTH    R O U T E S *************************************/
 
-router.post('/login', authRoutes.login);
+router.post('/login', passport.authenticate('local'));
 
 // router.get('/logout', passport.logout);
 

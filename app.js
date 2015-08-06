@@ -1,12 +1,13 @@
 var express = require('express');
 var http = require('http');
 var database = require('./app/database/adapter');
+var mongoose = require('mongoose');
 var path = require('path');
 var config = require('config').get('server');
 var bodyParser = require('body-parser');
 var passport = require('./app/utils/passport');
 var session = require('express-session');
-
+var MongoStore = require('connect-mongostore')(session);
 var auth = require('./app/middleware/auth').auth;
 //var api = require('./app/routes');
 
@@ -24,7 +25,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'app/static/client')));
 app.use(session({
     secret: 'afk;j4fhdfuhekl',
-    resave: true,
+    cookie: {
+            path: "/",
+            httpOnly: true,
+            maxAge: null
+        },
+    key: 'sid',
+    store: new MongoStore({'db': mongoose.connections[0].name}),
+    resave: false,
     saveUninitialized: true
 }));
 app.use(passport.initialize());
