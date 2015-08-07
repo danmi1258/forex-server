@@ -17,6 +17,16 @@
     }
   },
 
+  "session": {
+    "key": "sid",
+    "secret": "faicojqci34orfhvkjnfk4jf4",
+    "cookie": {
+            "path": "/",
+            "httpOnly": true,
+            "maxAge": null
+        }
+  },
+
   "logger": {
     "level": "debug",
     "path": "/../logs",

@@ -3,17 +3,10 @@ var passport = require('../utils/passport');
 
 
 module.exports.login = function(req, res) {
-    passport.authenticate('local'), function(err, user) {
-        if (err) {
-            return res.json(err);
-        }
-        passport.serializeUser(function(err, cb) {
-            if (err) {
-                console.error(123, err);
-                return cb(err);
-            }
+    res.json(req.user);
+};
 
-        res.json(user);
-        })
-    })(req, res);
+module.exports.logout = function(req, res) {
+    req.logout();
+    res.json({logout: true});
 };

@@ -1,36 +1,28 @@
 var express = require('express');
 var http = require('http');
-var database = require('./app/database/adapter');
+require('./app/database/adapter');
 var mongoose = require('mongoose');
 var path = require('path');
-var config = require('config').get('server');
+var config = require('config');
 var bodyParser = require('body-parser');
 var passport = require('./app/utils/passport');
 var session = require('express-session');
 var MongoStore = require('connect-mongostore')(session);
 var auth = require('./app/middleware/auth').auth;
-//var api = require('./app/routes');
-
-//var errors = require('./errors');
+var cors = require('cors');
 var logger = require('./app/utils/logger');
-//var setCurUser = require('./middleware/currentUser');
 var apiRoutes = require('./app/routes');
-//var authRoute = require('./routes/auth');
 var socket = require('./app/socket');
-
 var app = express();
 
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'app/static/client')));
 app.use(session({
-    secret: 'afk;j4fhdfuhekl',
-    cookie: {
-            path: "/",
-            httpOnly: true,
-            maxAge: null
-        },
-    key: 'sid',
+    secret: config.get('session').secret,
+    cookie: config.get('session').cookie,
+    key: config.get('session').key,
     store: new MongoStore({'db': mongoose.connections[0].name}),
     resave: false,
     saveUninitialized: true
@@ -76,19 +68,11 @@ app.use(function(err, req, res, next) {
     next();
 });
 
-/* ***********************/
-/* S E R V E R
- /* ***********************/
 
-/* create server */
+/****   S E R V E R    **********************************************/
 
-//var server = app.listen(config.port, function() {
-//    logger.info('[Server]: start server on port:', config.port);
-//    server.close(function() { console.log('Doh :('); });
-//});
-
-http.createServer(app).listen(config.port, function() {
-    logger.info('[Server]: start server on port:', config.port);
+http.createServer(app).listen(config.get('server').port, function() {
+    logger.info('[Server]: start server on port:', config.get('server').port);
 });
 
 module.exports = app;
