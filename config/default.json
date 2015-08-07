@@ -29,7 +29,7 @@
 
   "logger": {
     "level": "debug",
-    "path": "../logs",
+    "path": "/../../logs",
     "filename": "app.log"
   },
 
