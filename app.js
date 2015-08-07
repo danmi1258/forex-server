@@ -1,6 +1,6 @@
+require('./app/database/adapter');
 var express = require('express');
 var http = require('http');
-require('./app/database/adapter');
 var mongoose = require('mongoose');
 var path = require('path');
 var config = require('config');
@@ -13,6 +13,7 @@ var cors = require('cors');
 var logger = require('./app/utils/logger');
 var apiRoutes = require('./app/routes');
 var socket = require('./app/socket');
+var io = require('socket.io');
 var app = express();
 
 app.use(cors());
@@ -71,8 +72,20 @@ app.use(function(err, req, res, next) {
 
 /****   S E R V E R    **********************************************/
 
-http.createServer(app).listen(config.get('server').port, function() {
+var server = http.createServer(app).listen(config.get('server').port, function() {
     logger.info('[Server]: start server on port:', config.get('server').port);
+});
+
+io = io(server);
+
+io.on('connection', function (socketIO) {
+    socketIO.emit('news', { hello: 'world' });
+    socketIO.on('my other event', function (data) {
+        console.log(data);
+    });
+    socketIO.on('disconnect', function () {
+        console.log('user disconnected');
+    });
 });
 
 module.exports = app;
