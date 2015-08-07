@@ -16,7 +16,7 @@ var socket = require('./app/socket');
 var io = require('socket.io');
 var app = express();
 
-app.use(cors());
+app.use(cors({origin: /localhost.*/, credentials: true}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'app/static/client')));
