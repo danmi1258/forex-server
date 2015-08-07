@@ -5,7 +5,6 @@ var forbiddenError = require('../routes/httpErrors').Forbidden;
 var serverError = require('../routes/httpErrors').serverError;
 
 function passportMiddleWare(username, password, callback) {
-    console.log('passportMiddleWare');
     User.findOne({username: username}, function (err, user) {
         if (err) {
             return callback(null, serverError('db error'), err);
@@ -28,13 +27,11 @@ passport.use(new LocalStrategy(passportMiddleWare));
 
 
 passport.serializeUser(function(user, callback) {
-    console.log('serializeUser');
     callback(null, user.id);
 });
 
 
 passport.deserializeUser(function(userId, callback) {
-    console.log('deserializeUser');
     User.findById(userId, callback);
 });
 

@@ -9,8 +9,9 @@ var passport = require('../utils/passport');
 
 /**** AUTH    R O U T E S *************************************/
 
+router.get('/login', authRoutes.isLoggedIn);
+router.get('/logout', authRoutes.logout);
 router.post('/login', passport.authenticate('local'), authRoutes.login);
-router.post('/logout', passport.authenticate('local'), authRoutes.logout);
 
 // router.get('/logout', passport.logout);
 
