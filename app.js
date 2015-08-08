@@ -19,7 +19,7 @@ var sessionStore = new MongoStore({'db': mongoose.connections[0].name});
 // var io = require('socket.io')(server);
 require('./app/socketIO')(server, sessionStore);
 
-app.use(cors());
+app.use(cors({origin: /localhost.*/, credentials: true}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'app/static/client')));
