@@ -13,8 +13,11 @@ var cors = require('cors');
 var logger = require('./app/utils/logger');
 var apiRoutes = require('./app/routes');
 var socket = require('./app/socket');
-var io = require('socket.io');
 var app = express();
+var server = http.createServer(app);
+var sessionStore = new MongoStore({'db': mongoose.connections[0].name});
+// var io = require('socket.io')(server);
+require('./app/socketIO')(server, sessionStore);
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -24,7 +27,7 @@ app.use(session({
     secret: config.get('session').secret,
     cookie: config.get('session').cookie,
     key: config.get('session').key,
-    store: new MongoStore({'db': mongoose.connections[0].name}),
+    store: sessionStore,
     resave: false,
     saveUninitialized: true
 }));
@@ -72,20 +75,13 @@ app.use(function(err, req, res, next) {
 
 /****   S E R V E R    **********************************************/
 
-var server = http.createServer(app).listen(config.get('server').port, function() {
+
+
+server.listen(config.get('server').port, function() {
     logger.info('[Server]: start server on port:', config.get('server').port);
 });
 
-io = io(server);
 
-io.on('connection', function (socketIO) {
-    socketIO.emit('news', { hello: 'world' });
-    socketIO.on('my other event', function (data) {
-        console.log(data);
-    });
-    socketIO.on('disconnect', function () {
-        console.log('user disconnected');
-    });
-});
+
 
 module.exports = app;
