@@ -5,7 +5,7 @@
   },
 
   "database": {
-    "uri" : "mongodb://localhost/fx",
+    "uri" : "mongodb://localhost/fx-dev",
     "options": {
       "user": "",
       "pass": "",
@@ -19,7 +19,7 @@
 
   "session": {
     "key": "sid",
-    "secret": "faicojqci34orfhvkjnfk4jf4",
+    "secret": "asdkcnuihiy7xfjnjcfrfhvkjnfk4jf4",
     "cookie": {
             "path": "/",
             "httpOnly": true,
