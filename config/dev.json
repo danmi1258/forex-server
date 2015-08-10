@@ -1,7 +1,12 @@
 {
   "server": {
     "host": "localhost",
-    "port": 3020
+    "port": 3030
+  },
+
+  "moloko": {
+    "host": "127.0.0.1",
+    "port": 5030
   },
 
   "database": {

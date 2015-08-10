@@ -4,12 +4,11 @@ var async = require('async');
 var config = require('config');
 var _ = require('underscore');
 var logger = require('./utils/logger');
-var port = 5555;
 var socketProxy = require('./socketProxy');
 var dbMethods = require('./models/methods');
 var server = moloko.server({
-    host: '127.0.0.1',
-    port: port
+    host: config.get('moloko').host,
+    port: config.get('moloko').port
 });
 
 socketProxy.setServer(server);
@@ -144,7 +143,7 @@ function messageBindReq(socket, message) {
 
 module.exports.start = function start() {
     server.on('listening', function() {
-        logger.info('Server is started listening on port', port);
+        logger.info('Moloko socket start to listening on port', config.get('moloko').port);
     });
 
     server.on('connection', function() {

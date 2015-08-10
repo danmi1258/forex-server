@@ -4,6 +4,11 @@
     "port": 3020
   },
 
+  "moloko": {
+    "host": "127.0.0.1",
+    "port": 5020
+  },
+
   "database": {
     "uri" : "mongodb://localhost/fx",
     "options": {
