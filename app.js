@@ -16,8 +16,8 @@ var socket = require('./app/socket');
 var app = express();
 var server = http.createServer(app);
 var sessionStore = new MongoStore({'db': mongoose.connections[0].name});
-// var io = require('socket.io')(server);
-require('./app/socketIO')(server, sessionStore);
+require('./app/sockets/webSocket/socketIO')(server, sessionStore);
+
 
 app.use(cors({origin: /localhost.*/, credentials: true}));
 app.use(bodyParser.json());
