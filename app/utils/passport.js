@@ -12,7 +12,7 @@ function passportMiddleWare(username, password, callback) {
 
         if (!user) {
             console.error('user not found');
-            return callback(null, forbiddenError('User not found'));
+            return callback(forbiddenError('User not found'));
         }
 
         //if (!user.verifyPassword(password)) {

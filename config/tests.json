@@ -5,7 +5,7 @@
   },
 
   "database": {
-    "uri" : "mongodb://localhost/fx_test",
+    "uri" : "mongodb://localhost/fx",
     "options": {
       "user": "",
       "pass": "",
@@ -17,19 +17,38 @@
     }
   },
 
+  "session": {
+    "key": "sid",
+    "secret": "faicojqci34orfhvkjnfk4jf4",
+    "cookie": {
+            "path": "/",
+            "httpOnly": true,
+            "maxAge": null
+        }
+  },
+
   "logger": {
-    "level": "",
-    "path": "/../logs",
+    "level": "debug",
+    "path": "/../../logs",
     "filename": "app.log"
   },
 
-  "session": {
-    "secret": "mhNdfgdftdW2",
-    "key": "sid",
-    "cookie": {
-      "path": "/",
-      "httpOnly": true,
-      "maxAge": null
-    }
-  }
+  "messageTypes": {
+    "BIND_REQ": 0,
+    "BIND_CONF": 1,
+    "ORDER_OPEN_REQ": 101,
+    "ORDER_OPEN_CONF": 102,
+    "ORDER_CLOSE_REQ": 103,
+    "ORDER_CLOSE_CONF": 104,
+    "ORDERS_IND": 10 
+  },
+
+  "orderStates": {
+    "CREATING": 11,
+    "CREATED":  12,
+    "CLOSING":  21,
+    "CLOSED":   22
+  },
+
+  "allowedTerminalTypes": ["consumer", "provider"]
 }
