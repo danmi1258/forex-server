@@ -9,7 +9,9 @@ var socketProxy = require('../socketProxy');
 var utils = require('../utils');
 var p$ = utils.print;
 var lp$ = utils.logPrefix;
+var async = require('async');
 require('mongoose-schema-extend');
+
 
 /**
  * @class Order
@@ -220,6 +222,49 @@ Order.statics.closeOrder = function(_client, _order, _options, _callback) {
     });
 };
 
+Order.statics.saveHistory = function(_orderTicket, _data, _callback) {
+    
+    var self = this;
+    var lp = lp$('Order#saveHistory');
+
+    /* specify aruments */
+    try {
+        var args = new Args([
+            {orderTicket: Args.INT | Args.Required},
+            {data: Args.OBJECT | Args.Required},
+            {callback: Args.FUNCTION | Args.Optional, _default: Function}
+        ], arguments);
+    }
+    catch(err) {
+        logger.error(err);
+        return _callback(err);
+    }
+    
+    async.waterfall([
+        function findOrder(next) {
+            self.model('order').getByTicket(args.orderTicket, next);
+        },
+        function checkOnChange(order, next) {
+            var len = order.history.length;
+            
+            if (!len || (len && order.history[len - 1].profit !== args.data.profit)) {
+                next(null, order);
+            }
+            else {
+                args.callback();
+            }
+        },
+        function(order, next) {
+            order.history.push(args.data);
+            order.save(next);
+        }
+    ], function(err, res) {
+        if (err) {
+            logger.info(lp, 'Error save history to the order', err);
+            args.callback();
+        }
+    });
+};
 
 /* EXPORTS
 ##################

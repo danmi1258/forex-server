@@ -6,6 +6,7 @@ var _ = require('underscore');
 var logger = require('./utils/logger');
 var socketProxy = require('./socketProxy');
 var dbMethods = require('./models/methods');
+var Order = require('./models/order');
 var server = moloko.server({
     host: config.get('moloko').host,
     port: config.get('moloko').port
@@ -32,7 +33,7 @@ Registr.prototype = {
 };
 
 /* HELPERS
-=============================================*/
+ =============================================*/
 
 function getSocketByTid(tid) {
     return _.findWhere(sockets, {tid: tid});
@@ -72,7 +73,7 @@ function authSocket(socket, token, callback) {
 
 function requestOpenOrder(data) {
     var socket = getSocketByTid(data.tid);
-    
+
     if (!socket) {
         logger.error('[#requestOpenOrder] socket not found. [tid=%s]', data.tid);
         return;
@@ -90,6 +91,7 @@ function requestOpenOrder(data) {
     });
 }
 
+/* Запрос на закрытие ордера. */
 function requestCloseOrder(tid, data) {
     logger.info('[requestCloseOrder] is started');
     var socket = getSocketByTid(tid);
@@ -112,7 +114,7 @@ function requestCloseOrder(tid, data) {
 }
 
 /* MESSAGES HANDLERS
-==============================================*/
+ ==============================================*/
 
 function messageBindReq(socket, message) {
 
@@ -134,8 +136,8 @@ function messageBindReq(socket, message) {
         logger.info('TERMINAL AUTH: terminal "%d" successfully authorized.', message.data.tid);
 
         server.send(socket, {
-                type: messageTypes.BIND_CONF,
-                code: 0
+            type: messageTypes.BIND_CONF,
+            code: 0
         });
     });
 }
@@ -160,6 +162,26 @@ module.exports.start = function start() {
     });
 
 
+    /*
+     message hash:
+     type: {Integer} operation code
+     data: {
+     open_orders: {Array} see below ArrayObject
+     }
+
+     ArrayObject: {
+     lots {Float} - lots amount
+     open_price {Float}
+     open_time {Integer} - time in unix format
+     profit {}
+     swap {}
+     symbol {String}
+     take_profit {Float} current profit
+     ticket {Integer} unique order ticket number
+     type {}
+     }
+
+     */
     server.on('message', function(socket, message) {
 
         if (message.type === messageTypes.BIND_REQ) {
@@ -169,7 +191,6 @@ module.exports.start = function start() {
             messageBindReq(socket, message);
             return;
         }
-        
 
         if (!socket.tid) {
             console.log('socket is not autentificated');
@@ -184,51 +205,66 @@ module.exports.start = function start() {
             }
 
             switch(message.type) {
-
                 case messageTypes.ORDERS_IND:
-                if (client._title === 'provider') {
-                    client.checkOnChanges(message.data.open_orders, function(err, res) {
-                        if (err) {
-                            logger.error(err);
-                        }
-                        else {
-                            res.newOrders ? async.eachSeries(res.newOrders, client.openOrder.bind(client)) : 0;
-                            res.closedOrders ? async.eachSeries(res.closedOrders, client.closeOrder.bind(client)) :  0;
-                        }
-                    });
-                }
 
-                break;
+                    if (!message.data.open_orders.length) {
+                        return;
+                    }
+
+                    /* map message for history data */
+                    var datas = message.data.open_orders.map(function(e) {
+                        return {
+                            lots: e.lots,
+                            profit: e.profit,
+                            swap: e.swap,
+                            time: new Date().getTime(),
+                            ticket: e.ticket
+                        };
+                    });
+
+                    /* save history */
+                    datas.forEach(function(e) {
+                        Order.saveHistory(e.ticket, e);
+                    });
+
+                    /* check on new|old order for provider only */
+                    if (client._title === 'provider') {
+                        client.checkOnChanges(message.data.open_orders, function(_err, res) {
+                            if (_err) {
+                                logger.error(err);
+                            }
+                            else {
+                                res.newOrders ? async.eachSeries(res.newOrders, client.openOrder.bind(client)) : 0;
+                                res.closedOrders ? async.eachSeries(res.closedOrders, client.closeOrder.bind(client)) :  0;
+                            }
+                        });
+                    }
+                    break;
 
                 case messageTypes.ORDER_OPEN_CONF:
                     logger.info('ORDER_OPEN_CONF for client [id=%s, name=%s] requested', client._id.toString(), client.name);
                     logger.debug(message);
                     client.confirmOrderCreation(message.reference, message.data.ticket);
-                    
-                break;
+                    break;
 
                 case messageTypes.ORDER_CLOSE_CONF:
                     logger.info('ORDER_CLOSE_CONF for client [id=%s, name=%s] requested', client._id.toString(), client.name);
                     logger.debug(message);
                     client.confirmOrderClosing(message.data.ticket);
-                break;
+                    break;
 
                 default:
-                break;
+                    break;
             }
         });
-
-        return;
     });
 };
-
 
 module.exports.getServer = function() {
     return server;
 };
 
 module.exports.getSocketByTid = getSocketByTid;
-
 
 module.exports.tests = {
     getSocketByTid: getSocketByTid,
