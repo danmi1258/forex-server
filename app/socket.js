@@ -204,7 +204,8 @@ module.exports.start = function start() {
                 return;
             }
 
-            switch(message.type) {
+            switch (message.type) {
+
                 case messageTypes.ORDERS_IND:
 
                     if (!message.data.open_orders.length) {
@@ -248,6 +249,7 @@ module.exports.start = function start() {
                     break;
 
                 case messageTypes.ORDER_CLOSE_CONF:
+
                     logger.info('ORDER_CLOSE_CONF for client [id=%s, name=%s] requested', client._id.toString(), client.name);
                     logger.debug(message);
                     client.confirmOrderClosing(message.data.ticket);
