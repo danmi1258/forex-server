@@ -5,13 +5,13 @@
   },
 
   "moloko": {
-    "host": "127.0.0.1",
-    "port": 5555
+    "host": "46.38.50.90",
+    "port": 5020
   },
 
   "slack": {
-    "orderChanel": "#forex-tests",
-    "systemChanel": "#forex-tests"
+    "orderChanel": "#forex-order",
+    "systemChanel": "#forex-system-events"
   },
 
   "database": {

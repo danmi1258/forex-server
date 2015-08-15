@@ -7,6 +7,7 @@ var logger = require('./utils/logger');
 var socketProxy = require('./socketProxy');
 var dbMethods = require('./models/methods');
 var Order = require('./models/order');
+var slack = require('./integrations/slack');
 var server = moloko.server({
     host: config.get('moloko').host,
     port: config.get('moloko').port
@@ -126,6 +127,7 @@ function messageBindReq(socket, message) {
             });
 
             console.error('AUTH ERROR: terminal tid=%s auth error', message.data.tid, err);
+            slack.terminalConnectError('не удачная попытка авторизации терминала. tid: ', message.data.tid);
             return;
         }
 
@@ -134,6 +136,10 @@ function messageBindReq(socket, message) {
         storeSocket(socket, message.data.tid);
 
         logger.info('TERMINAL AUTH: terminal "%d" successfully authorized.', message.data.tid);
+
+        dbMethods.getClientByTid(message.data.tid, function(err, client) {
+            slack.actions.terminalConnected(client);
+        })
 
         server.send(socket, {
             type: messageTypes.BIND_CONF,
@@ -158,6 +164,11 @@ module.exports.start = function start() {
 
     server.on('close', function(socket) {
         logger.info('socket with tid=%s is disconected', socket.tid);
+
+        dbMethods.getClientByTid(socket.tid, function(err, client) {
+            slack.actions.terminalDisconnect(client);
+        })
+        
         removeSocket(socket);
     });
 
