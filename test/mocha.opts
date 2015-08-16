@@ -1,0 +1,6 @@
+--compilers js:babel/register
+--require babelhook
+--require should
+--reporter dot
+--ui bdd
+--timeout 2000

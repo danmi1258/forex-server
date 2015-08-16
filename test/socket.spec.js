@@ -83,17 +83,4 @@ describe('socket #messageOrderInd', function() {
             }
         ], done);
     });
-
-    describe('#messageOrderInd', function() {
-        it('123', function(done) {
-            // socketMethods.messageOrderInd(provider, )
-            // console.log(12, consumer1);
-            done();
-            // provider.getOrders(function(err, res) {
-            //     console.log(err, res);
-            //     done();
-            // });
-        });
-    });
-
 });
