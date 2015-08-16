@@ -66,6 +66,9 @@ describe('#prepare', function () {
             function(s, n, next) {
                 subscriber = s;
                 subscriber.subscribe(provider.id, next);
+            },
+            function(res, next) {
+                subscriber.setMatchedLots(provider.id, 0.05, next);
             }
         ], done);
     });
@@ -104,7 +107,7 @@ describe('#prepare', function () {
                     }, 100);
                 }
             ], function(err, res) {
-                /* проверить тут результат res[0,1,2]*/
+                
                 res[0].should.have.properties({
                     ticket: 12345,
                     client: provider.id,
@@ -121,6 +124,7 @@ describe('#prepare', function () {
                 
                 res[2][0].should.have.properties({
                     ticket: null,
+                    lots: 0.05,
                     state: 11,
                     client: subscriber.id,
                     masterOrderId: res[0].id
@@ -128,6 +132,7 @@ describe('#prepare', function () {
 
                 res[2][1].should.have.properties({
                     ticket: null,
+                    lots: 0.05,
                     state: 11,
                     client: subscriber.id,
                     masterOrderId: res[1].id

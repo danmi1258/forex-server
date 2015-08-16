@@ -18,7 +18,9 @@ require('mongoose-schema-extend');
     @extends Client
  */
 var Subscriber = BaseSchema.extend({
-    subscriptions: Array
+    subscriptions: Array,
+    // matched lots {providerId: lot}
+    matchedLots: {type: Object, default: {}}
 });
 var Su = Subscriber.methods;
 
@@ -52,19 +54,20 @@ Subscriber.statics.handleMasterOrderOpen = function(_provider, _masterOrder, _ca
                 args.callback();
             }
             else {
-                var orderValues = {
-                    lots: 0.02,
-                    type: args.masterOrder.type,
-                    symbol: args.masterOrder.symbol,
-                    comment: 'master order clone',
-                    masterOrderId: args.masterOrder._id.toString()
-                };
-
-                var options = {
-                    confirm: true
-                };
-
                 var proxy = function (subscriber, done) {
+                    var orderValues = {
+                        lots: subscriber._getMatchedLot(args.provider.id) || 0.02,
+                        // lots: 0.02,
+                        type: args.masterOrder.type,
+                        symbol: args.masterOrder.symbol,
+                        comment: 'master order clone',
+                        masterOrderId: args.masterOrder._id.toString()
+                    };
+
+                    var options = {
+                        confirm: true
+                    };
+
                     Order.openOrder(subscriber, orderValues, options, done);
                 };
 
@@ -257,6 +260,14 @@ Su.confirmOrderClosing = function(_ticket, _callback) {
     });
 };
 
+Su._getMatchedLot = function(providerId) {
+    return this.matchedLots[providerId] || null;
+};
+
+Su.setMatchedLots = function(providerId, lot, callback) {
+    this.matchedLots[providerId] = lot;
+    this.save(callback);
+};
 
 
 /**** E X P O R T S  ********************************************/
