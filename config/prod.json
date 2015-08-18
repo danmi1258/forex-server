@@ -10,8 +10,8 @@
   },
 
   "slack": {
-    "orderChanel": "#forex-order",
-    "systemChanel": "#forex-system-events"
+    "orderChannel": "#forex-order",
+    "systemChannel": "#forex-system-events"
   },
 
   "database": {

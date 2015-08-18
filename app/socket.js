@@ -257,13 +257,6 @@ module.exports.start = function start() {
                                 logger.error(err);
                             }
                             else {
-                                if (res.newOrders.length) {
-                                    logger.debug('##### new orders', res.newOrders.length)
-                                }
-                                if (res.closedOrders.length) {
-                                    logger.debug('### closed orders', res.closedOrders.length)
-                                }
-
                                 res.newOrders ? async.eachSeries(res.newOrders, client.openOrder.bind(client)) : 0;
                                 res.closedOrders ? async.eachSeries(res.closedOrders, client.closeOrder.bind(client)) :  0;
                             }
@@ -283,7 +276,7 @@ module.exports.start = function start() {
                 case messageTypes.ORDER_CLOSE_CONF:
                     logger.info('ORDER_CLOSE_CONF for client [id=%s, name=%s] requested', client._id.toString(), client.name);
                     logger.debug(message);
-                    
+
                     client.confirmOrderClosing(message.data.ticket, (err, order) => {
                         !err ? slack.actions.closeOrder(client, order) : 0;
                     });

@@ -4,7 +4,7 @@ import {print} from '../utils';
 
 const slack = new Slack('https://hooks.slack.com/services/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');
 // const slack = new Slack('https://hooks.slack.com/services/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');
-const {orderChanel, systemChanel} = config.slack;
+const {orderChanel, systemChannel} = config.slack;
 const slackUsername = 'forexBot'
 
 export let __useDefault = true;
@@ -15,7 +15,7 @@ export const actions = {
     terminalConnected (client = {}) {
         slack.send({
             text: `Терминал подключился по сокету ${print(client)}`,
-            channel: systemChanel,
+            channel: systemChannel,
             username: slackUsername
         });
     },
@@ -23,7 +23,7 @@ export const actions = {
     terminalDisconnect (client = {}) {
         slack.send({
             text: `Терминал отключился от сервера ${print(client)}`,
-            channel: systemChanel,
+            channel: systemChannel,
             username: slackUsername
         });
     },
@@ -31,7 +31,7 @@ export const actions = {
     terminalConnectError (messasge = 'no message') {
         slack.send({
             text: messasge,
-            channel: systemChanel,
+            channel: systemChannel,
             username: slackUsername
         })
     },
@@ -56,7 +56,7 @@ export const actions = {
 
         slack.send({
             text: message,
-            channel: systemChanel,
+            channel: systemChannel,
             username: slackUsername
         });
     },
@@ -68,20 +68,23 @@ export const actions = {
             case 'provider':
                 message = `Провайдер закрыл ордер [${print(client)}, ${print(order)}]`;
                 break;
+
             case 'subscriber':
-                if (order.state === config.orderStates.CREATING) {
+                if (order.state === config.orderStates.CLOSING) {
                     message = `Обработка закрытия ордера для подписчика [${print(client)}, ${print(order)}]`;
                 }
-                else if (order.state === config.orderStates.CREATED) {
+                else if (order.state === config.orderStates.CLOSED) {
                     message = `Подписчик закрыл ордер [${print(client)}, ${print(order)}]`;
                 }
-
                 break;
+
+            default:
+                message = 'клиент не определен';
         }
 
         slack.send({
             text: message,
-            channel: systemChanel,
+            channel: systemChannel,
             username: slackUsername
         });
     }

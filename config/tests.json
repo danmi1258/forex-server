@@ -5,8 +5,8 @@
   },
 
   "slack": {
-    "orderChanel": "#forex-tests",
-    "systemChanel": "#forex-tests"
+    "orderChannel": "#forex-tests",
+    "systemChannel": "#forex-tests"
   },
   
   "database": {
