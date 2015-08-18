@@ -4,8 +4,13 @@
     "port": 3020
   },
 
+  "slack": {
+    "orderChanel": "#forex-tests",
+    "systemChanel": "#forex-tests"
+  },
+  
   "database": {
-    "uri" : "mongodb://localhost/fx",
+    "uri" : "mongodb://localhost/fx-test",
     "options": {
       "user": "",
       "pass": "",
