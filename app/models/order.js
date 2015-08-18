@@ -10,6 +10,7 @@ var utils = require('../utils');
 var p$ = utils.print;
 var lp$ = utils.logPrefix;
 var async = require('async');
+var slack = require('../integrations/slack');
 require('mongoose-schema-extend');
 
 
@@ -141,6 +142,9 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
             return args.callback(err);
         }
 
+        /* post action on slack */
+        slack.actions.createNewOrder(args.client, res);
+
         /* send ORDER_OPEN_REQ signal to the terminal */
         if (args.options.confirm) {
             logger.info(lp, 'send request to the terminal');
@@ -195,6 +199,9 @@ Order.statics.closeOrder = function(_client, _order, _options, _callback) {
             logger.error(lp, 'db error');
             return args.callback(err);
         }
+
+        /* post action on slack */
+        slack.actions.closeOrder(args.client, res);
 
         /* send ORDER_OPEN_REQ signal to the terminal */
         if (args.options.confirm) {

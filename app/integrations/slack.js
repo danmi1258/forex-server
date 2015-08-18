@@ -12,7 +12,6 @@ export default slack;
 
 export const actions = {
     terminalConnected (client = {}) {
-        console.log(systemChanel);
         slack.send({
             text: `terminal [name: ${client.name}, tid: ${client.tid}] is conected`,
             channel: systemChanel,

@@ -138,7 +138,15 @@ function messageBindReq(socket, message) {
         logger.info('TERMINAL AUTH: terminal "%d" successfully authorized.', message.data.tid);
 
         dbMethods.getClientByTid(message.data.tid, function(err, client) {
-            slack.actions.terminalConnected(client);
+            if (err) {
+                logger.error(err);
+            } 
+            else if (!client) {
+                logger.info(`client with tid=${message.data.tid} not found`);
+            } 
+            else {
+                slack.actions.terminalConnected(client);
+            }
         })
 
         server.send(socket, {
@@ -166,7 +174,15 @@ module.exports.start = function start() {
         logger.info('socket with tid=%s is disconected', socket.tid);
 
         dbMethods.getClientByTid(socket.tid, function(err, client) {
-            slack.actions.terminalDisconnect(client);
+            if (err) {
+                logger.error(err);
+            }
+            else if (!client) {
+                logger.info(`client with tid=${socket.tid} not found`);    
+            }
+            else {
+                slack.actions.terminalDisconnect(client);
+            }
         })
         
         removeSocket(socket);

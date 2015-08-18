@@ -9,6 +9,11 @@
     "port": 5555
   },
 
+  "slack": {
+    "orderChanel": "#forex-tests",
+    "systemChanel": "#forex-tests"
+  },
+
   "database": {
     "uri" : "mongodb://localhost/fx",
     "options": {
