@@ -82,7 +82,9 @@ slack.send({
 })
 
 server.listen(config.get('server').port, function() {
-    logger.info('[Server]: start server on port:', config.get('server').port);
+    logger.info(`[Server]: Start server on port: ${config.get('server').port}`);
+    logger.info(`under environment: ${process.env.NODE_ENV || 'default'}`);
+    logger.info(`used db: ${config.get('database').uri}`);
 });
 
 

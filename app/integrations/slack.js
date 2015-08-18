@@ -1,5 +1,6 @@
 import Slack from 'node-slack';
 import config from 'config';
+import {print} from '../utils';
 
 const slack = new Slack('https://hooks.slack.com/services/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');
 // const slack = new Slack('https://hooks.slack.com/services/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');
@@ -13,7 +14,7 @@ export default slack;
 export const actions = {
     terminalConnected (client = {}) {
         slack.send({
-            text: `terminal [name: ${client.name}, tid: ${client.tid}] is conected`,
+            text: `Терминал подключился по сокету ${print(client)}`,
             channel: systemChanel,
             username: slackUsername
         });
@@ -21,7 +22,7 @@ export const actions = {
 
     terminalDisconnect (client = {}) {
         slack.send({
-            text: `terminal [name: ${client.name}, tid: ${client.tid}] is disconected`,
+            text: `Терминал отключился от сервера ${print(client)}`,
             channel: systemChanel,
             username: slackUsername
         });
@@ -40,20 +41,18 @@ export const actions = {
 
         switch (client._title) {
             case 'provider':
-                message = `provider [${client.name}, ${client.tid}] create new order [ticket: ${order.ticket}]`;
+                message = `Провайдер открыл ордер [${print(client)}, ${print(order)}]`;
                 break;
             case 'subscriber':
                 if (order.state === config.orderStates.CREATING) {
-                    message = `subscriber [${client.name}, ${client.tid}] copied new order [ticket: ${order.ticket}]`;
+                    message = `Обработка открытия ордера для подписчика [${print(client)}, ${print(order)}]`;
                 }
                 else if (order.state === config.orderStates.CREATED) {
-                    message = `subscriber [${client.name}, ${client.tid}] confirm new order creation [ticket: ${order.ticket}]`;
+                    message = `Подписчик открыл ордер [${print(client)}, ${print(order)}]`;
                 }
 
                 break;
         }
-
-        console.log('##########', message, systemChanel, slackUsername);
 
         slack.send({
             text: message,
@@ -67,14 +66,14 @@ export const actions = {
 
         switch (client._title) {
             case 'provider':
-                message = `provider [${client.name}, ${client.tid}] closed the order [ticket: ${order.ticket}]`;
+                message = `Провайдер закрыл ордер [${print(client)}, ${print(order)}]`;
                 break;
             case 'subscriber':
                 if (order.state === config.orderStates.CREATING) {
-                    message = `subscriber [${client.name}, ${client.tid}] start to closing order [ticket: ${order.ticket}]`;
+                    message = `Обработка закрытия ордера для подписчика [${print(client)}, ${print(order)}]`;
                 }
                 else if (order.state === config.orderStates.CREATED) {
-                    message = `subscriber [${client.name}, ${client.tid}] confirmed to close order [ticket: ${order.ticket}]`;
+                    message = `Подписчик закрыл ордер [${print(client)}, ${print(order)}]`;
                 }
 
                 break;

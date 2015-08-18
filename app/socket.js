@@ -127,7 +127,7 @@ function messageBindReq(socket, message) {
             });
 
             console.error('AUTH ERROR: terminal tid=%s auth error', message.data.tid, err);
-            slack.terminalConnectError('не удачная попытка авторизации терминала. tid: ', message.data.tid);
+            slack.terminalConnectError('Не удачная попытка авторизации терминала. tid: ', message.data.tid);
             return;
         }
 
@@ -220,7 +220,7 @@ module.exports.start = function start() {
         }
 
         if (!socket.tid) {
-            console.log('socket is not autentificated');
+            console.log('socket is not authenticated');
             return;
         }
 
@@ -233,10 +233,6 @@ module.exports.start = function start() {
 
             switch(message.type) {
                 case messageTypes.ORDERS_IND:
-
-                    if (!message.data.open_orders.length) {
-                        return;
-                    }
 
                     /* map message for history data */
                     var datas = message.data.open_orders.map(function(e) {
@@ -251,7 +247,7 @@ module.exports.start = function start() {
 
                     /* save history */
                     datas.forEach(function(e) {
-                        Order.saveHistory(e.ticket, e);
+                        //Order.saveHistory(e.ticket, e);
                     });
 
                     /* check on new|old order for provider only */
@@ -261,6 +257,13 @@ module.exports.start = function start() {
                                 logger.error(err);
                             }
                             else {
+                                if (res.newOrders.length) {
+                                    logger.debug('##### new orders', res.newOrders.length)
+                                }
+                                if (res.closedOrders.length) {
+                                    logger.debug('### closed orders', res.closedOrders.length)
+                                }
+
                                 res.newOrders ? async.eachSeries(res.newOrders, client.openOrder.bind(client)) : 0;
                                 res.closedOrders ? async.eachSeries(res.closedOrders, client.closeOrder.bind(client)) :  0;
                             }
@@ -271,13 +274,19 @@ module.exports.start = function start() {
                 case messageTypes.ORDER_OPEN_CONF:
                     logger.info('ORDER_OPEN_CONF for client [id=%s, name=%s] requested', client._id.toString(), client.name);
                     logger.debug(message);
-                    client.confirmOrderCreation(message.reference, message.data.ticket);
+
+                    client.confirmOrderCreation(message.reference, message.data.ticket, (err, order) => {
+                        !err ? slack.actions.createNewOrder(client, order) : 0;
+                    });
                     break;
 
                 case messageTypes.ORDER_CLOSE_CONF:
                     logger.info('ORDER_CLOSE_CONF for client [id=%s, name=%s] requested', client._id.toString(), client.name);
                     logger.debug(message);
-                    client.confirmOrderClosing(message.data.ticket);
+                    
+                    client.confirmOrderClosing(message.data.ticket, (err, order) => {
+                        !err ? slack.actions.closeOrder(client, order) : 0;
+                    });
                     break;
 
                 default:

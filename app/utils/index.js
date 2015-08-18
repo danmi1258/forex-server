@@ -13,12 +13,16 @@ module.exports.print = function(object) {
 
     switch(object._title) {
         case 'provider':
-            return '{provider: {name:' + object.name + ', id:' + object._id.toString() + '}}';
+            return '{provider: {name:' + object.name + ', id:' + object.id + '}}';
+
         case 'subscriber':
-            return '{subscriber: {name:' + object.name + ', id:' + object._id.toString() + '}}';
-     
+            return '{subscriber: {name:' + object.name + ', id:' + object.id + '}}';
+        
+        case 'order':
+            return `{order: {ticket: ${object.ticket}, id: ${object._id} }}`;
+
         default:
-            return '[id=' + object._id.toString() + ']';
+            return '[id=' + object.id + ']';
     }
 };
 

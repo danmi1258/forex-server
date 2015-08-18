@@ -207,7 +207,7 @@ Su.confirmOrderCreation = function(_ref, _ticket, _callback) {
     }
 
     var lp = lp$('confirmOrderCreation');
-    logger.info('lp', 'begin to confirm order opening.', p$(this), 'ref =', args.ref);
+    logger.info('lp', 'begin', p$(this), 'ref =', args.ref);
 
     Order.findOne({reference: args.ref}, function(err, order) {
         if (err) {
@@ -217,9 +217,11 @@ Su.confirmOrderCreation = function(_ref, _ticket, _callback) {
 
         order.state = config.orderStates.CREATED;
         order.ticket = args.ticket;
+
         order.save(function(err, res) {
-            err ? logger.error(lp, 'complite with error', err) :
-                  logger.info(lp, 'complite successfully. Order.ticket=', res.ticket);
+            err ? logger.error(lp, 'Error', err) :
+                  logger.info(lp, `Success. [order.ticket=${res.ticket}`);
+
             args.callback(null, res);
         });
     });
