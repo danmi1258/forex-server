@@ -266,6 +266,25 @@ Order.statics.saveHistory = function(_orderTicket, _data, _callback) {
     });
 };
 
+Order.statics.get = function(_clientId, _query = {}, _callback) {
+    try {
+        const args = new Args([
+            {clientId: Args.STRING | Args.Required},
+            {query: Args.OBJECT | Args.Optional},
+            {callback: Args.FUNCTION | Args.Optional, _default: function() {}}
+        ], arguments);
+    }
+    catch(err) {
+        logger.error(err);
+        return _callback(err);
+    }
+
+    const query = {
+        client: args.clientId,
+        state: args.query.state
+    }
+}
+
 /* EXPORTS
 ##################
 */
