@@ -247,7 +247,7 @@ module.exports.start = function start() {
 
                     /* save history */
                     datas.forEach(function(e) {
-                        //Order.saveHistory(e.ticket, e);
+                        Order.saveHistory(e.ticket, e);
                     });
 
                     /* check on new|old order for provider only */
