@@ -4,7 +4,7 @@ import config from 'config';
 const slack = new Slack('https://hooks.slack.com/services/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');
 // const slack = new Slack('https://hooks.slack.com/services/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');
 const {orderChanel, systemChanel} = config.slack;
-const slackUsername = 'forex bot'
+const slackUsername = 'forexBot'
 
 export let __useDefault = true;
 
@@ -53,9 +53,11 @@ export const actions = {
                 break;
         }
 
+        console.log('##########', message, systemChanel, slackUsername);
+
         slack.send({
             text: message,
-            chanel: systemChanel,
+            channel: systemChanel,
             username: slackUsername
         });
     },
@@ -80,7 +82,7 @@ export const actions = {
 
         slack.send({
             text: message,
-            chanel: systemChanel,
+            channel: systemChanel,
             username: slackUsername
         });
     }
