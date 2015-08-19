@@ -74,9 +74,9 @@ app.use(function(err, req, res, next) {
 
 /****   S E R V E R    **********************************************/
 
-
+var sbqt = '`';
 slack.send({
-    text: `Server start on port ${config.get('server').port}`,
+    text: `Server started ${sbqt} port: ${config.get('server').port} host: ${config.get('server').host} ${sbqt} `,
     channel: config.slack.systemChanel,
     username: 'forexBot'
 })
