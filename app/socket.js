@@ -212,9 +212,7 @@ module.exports.start = function start() {
     server.on('message', function(socket, message) {
 
         if (message.type === messageTypes.BIND_REQ) {
-
             logger.info('TERMINAL AUTH: terminal tid=%s try to auth', message.data.tid);
-
             messageBindReq(socket, message);
             return;
         }
@@ -227,8 +225,7 @@ module.exports.start = function start() {
         dbMethods.getClientByTid(socket.tid, function(err, client) {
 
             if (err) {
-                logger.error('SOCKET ERROR: client for terminal %s not found', socket.tid);
-                return;
+                return logger.error('SOCKET ERROR: client for terminal %s not found', socket.tid);
             }
 
             switch(message.type) {

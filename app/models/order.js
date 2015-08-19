@@ -136,14 +136,14 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
     args.values.state = args.options.confirm ? config.orderStates.CREATING : config.orderStates.CREATED;
 
     /* create new order */
-    new this(args.values).save(function(err, res) {
+    new this(args.values).save(function(err, order) {
         if (err) {
             logger.error(lp, 'db error');
             return args.callback(err);
         }
 
         /* post action on slack */
-        slack.actions.createNewOrder(args.client, res);
+        slack.actions.createNewOrder(args.client, order);
 
         /* send ORDER_OPEN_REQ signal to the terminal */
         if (args.options.confirm) {
@@ -157,27 +157,27 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
             else {
                 socketServer.send(socket, {
                     type: config.messageTypes.ORDER_OPEN_REQ,
-                    reference: res.reference,
+                    reference: order.reference,
                     data: {
-                        type: res.type,
-                        symbol: res.symbol,
-                        lots: res.lots,
-                        comment: res.comment || "default comment"
+                        type: order.type,
+                        symbol: order.symbol,
+                        lots: order.lots,
+                        comment: order.comment || "default comment"
                     }
                 });
                 logger.info(lp, 'The request is sent successfully');
             }
         }
 
-        logger.info(lp, 'new order created', p$(res));
-        args.callback(null, res);
+        logger.info(lp, 'new order created', p$(order));
+        args.callback(null, order);
     });
 };
 
 Order.statics.closeOrder = function(_client, _order, _options, _callback) {
     var lp = lp$('Order#openOrder');
     logger.info(lp, 'begin close order', p$(_client));
-
+    
     /* specify aruments */
     try {
         var args = new Args([
@@ -191,6 +191,16 @@ Order.statics.closeOrder = function(_client, _order, _options, _callback) {
         logger.error(err);
         return _callback(err);
     }
+
+    /* Check prop types for terminal. It protects terminal script fail */
+        try {
+            new Args([
+                {type: Args.INT | Args.Required},
+                {lots: Args.FLOAT | Args.Required}
+            ], [args.order])
+        } catch(err) {
+            return logger.error(lp, 'arguments error', err);
+        }
 
     args.order.state = args.options.confirm ? config.orderStates.CLOSING : config.orderStates.CLOSED;
 
