@@ -6,6 +6,7 @@ const slack = new Slack('https://hooks.slack.com/services/T04KGB0QW/B04L49M2R/65
 // const slack = new Slack('https://hooks.slack.com/services/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');
 const {orderChanel, systemChannel} = config.slack;
 const slackUsername = 'forexBot'
+const sbqt = '`';
 
 export let __useDefault = true;
 
@@ -41,14 +42,14 @@ export const actions = {
 
         switch (client._title) {
             case 'provider':
-                message = `Провайдер открыл ордер [${print(client)}, ${print(order)}]`;
+                message = `Провайдер открыл ордер ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
                 break;
             case 'subscriber':
                 if (order.state === config.orderStates.CREATING) {
-                    message = `Обработка открытия ордера для подписчика [${print(client)}, ${print(order)}]`;
+                    message = `Обработка открытия ордера для подписчика ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
                 }
                 else if (order.state === config.orderStates.CREATED) {
-                    message = `Подписчик открыл ордер [${print(client)}, ${print(order)}]`;
+                    message = `Подписчик открыл ордер ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
                 }
 
                 break;
@@ -66,15 +67,15 @@ export const actions = {
 
         switch (client._title) {
             case 'provider':
-                message = `Провайдер закрыл ордер [${print(client)}, ${print(order)}]`;
+                message = `Провайдер закрыл ордер ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
                 break;
 
             case 'subscriber':
                 if (order.state === config.orderStates.CLOSING) {
-                    message = `Обработка закрытия ордера для подписчика [${print(client)}, ${print(order)}]`;
+                    message = `Обработка закрытия ордера для подписчика ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
                 }
                 else if (order.state === config.orderStates.CLOSED) {
-                    message = `Подписчик закрыл ордер [${print(client)}, ${print(order)}]`;
+                    message = `Подписчик закрыл ордер ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
                 }
                 break;
 
