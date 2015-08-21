@@ -57,7 +57,7 @@ export const actions = {
 
         slack.send({
             text: message,
-            channel: systemChannel,
+            channel: orderChanel,
             username: slackUsername
         });
     },
@@ -85,7 +85,7 @@ export const actions = {
 
         slack.send({
             text: message,
-            channel: systemChannel,
+            channel: orderChanel,
             username: slackUsername
         });
     }
