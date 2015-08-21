@@ -2,8 +2,24 @@ var path = require('path');
 var winston = require('winston');
 var config = require('config').logger;
 
+
 // This is singleton
 module.exports = new Logger();
+
+function getTime() {
+
+    var offset = config.timeZoneOffset || 0;
+    var d = new Date();
+    
+    // convert to msec
+    // add local time zone offset 
+    // get UTC time in msec
+    var utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+    
+    // create new Date object for different city
+    // using supplied offset
+    return new Date(utc + (3600000*offset)).toISOString();
+}
 
 function Logger() {
 
@@ -12,13 +28,13 @@ function Logger() {
 
     winston.add(winston.transports.Console, {
         level: config.level,
-        timestamp: true,
-        colorize: true
+        timestamp: getTime,
+        colorize: true,
     });
 
     winston.add(winston.transports.File, {
         level: config.level,
-        timestamp: true,
+        timestamp: getTime,
         colorize: true,
         filename: path.resolve(__dirname + config.path, config.filename),
         maxsize: 1024*1024,

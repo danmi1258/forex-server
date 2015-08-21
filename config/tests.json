@@ -35,7 +35,8 @@
   "logger": {
     "level": "debug",
     "path": "/../../logs",
-    "filename": "app.log"
+    "filename": "app.log",
+    "timeZoneOffset": 3
   },
 
   "messageTypes": {
