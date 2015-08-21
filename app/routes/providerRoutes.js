@@ -99,3 +99,20 @@ module.exports.POST = {
         });
     }
 };
+
+module.exports.PUT = {
+    provider(req, res, next) {
+        async.waterfall([
+            function(next) {
+                Provider.findById(req.params.id, next);
+            },
+            function(provider, next) {
+                if (!res) return next(notFoundError('entity not found'));
+                _.extend(provider, req.body);
+                provider.save(next);
+            }
+        ], (err, provider) => {
+            return err ? next(err) : res.json(provider);
+        })
+    }
+};

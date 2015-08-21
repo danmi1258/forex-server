@@ -26,7 +26,7 @@ router.post('/providers', providerRoutes.POST.provider);
 router.post('/providers/:id/openOrder', providerRoutes.POST.openOrder);
 // router.post('/providers/:id/stopSubscriptions', providerRoutes.POST.stopSubscriptions);
 
-//router.put('/providers/:id', providerRoutes.PUT.provider);
+router.put('/providers/:id', providerRoutes.PUT.provider);
 
 // router.delete('/providers', providerRoutes.DELETE.provider);
 
@@ -42,6 +42,7 @@ router.post('/subscribers', subscriberRoutes.POST.subscriber);
 router.post('/subscribers/:id/subscribe', subscriberRoutes.POST.subscribe);
 router.post('/subscribers/:id/unsubscribe', subscriberRoutes.POST.unsubscribe);
 
+router.put('/subscribers/:id', subscriberRoutes.PUT.subscriber);
 // router.put('/subscribers/:id/stopSubscription', subscriberRoutes.POST.stopSubscriptions);
 
 

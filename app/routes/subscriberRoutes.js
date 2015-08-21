@@ -3,6 +3,7 @@ var Provider = require('../models/provider');
 var Order = require('../models/order');
 var Errors = require('./httpErrors');
 var badRequestError = Errors.badRequest;
+var notFoundError = Errors.notFoundError;
 var async = require('async');
 var _ = require('underscore');
 
@@ -105,3 +106,20 @@ module.exports.POST = {
         ], done);
     }
 };
+
+module.exports.PUT = {
+    subscriber(req, res, next) {
+        async.waterfall([
+            function(next) {
+                Subscriber.findById(req.params.id, next);
+            },
+            function(subscriber, next) {
+                if (!res) return next(notFoundError('entity not found'));
+                _.extend(subscriber, req.body);
+                subscriber.save(next);
+            }
+        ], (err, subscriber) => {
+            return err ? next(err) : res.json(subscriber);
+        })
+    }
+}
