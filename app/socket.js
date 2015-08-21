@@ -232,20 +232,20 @@ module.exports.start = function start() {
                 case messageTypes.ORDERS_IND:
 
                     /* map message for history data */
-                    var datas = message.data.open_orders.map(function(e) {
-                        return {
-                            lots: e.lots,
-                            profit: e.profit,
-                            swap: e.swap,
-                            time: new Date().getTime(),
-                            ticket: e.ticket
-                        };
-                    });
+                    // var datas = message.data.open_orders.map(function(e) {
+                    //     return {
+                    //         lots: e.lots,
+                    //         profit: e.profit,
+                    //         swap: e.swap,
+                    //         time: new Date().getTime(),
+                    //         ticket: e.ticket
+                    //     };
+                    // });
 
-                    /* save history */
-                    datas.forEach(function(e) {
-                        Order.saveHistory(e.ticket, e);
-                    });
+                    // /* save history */
+                    // datas.forEach(function(e) {
+                    //     Order.saveHistory(e.ticket, e);
+                    // });
 
                     /* check on new|old order for provider only */
                     if (client._title === 'provider') {
