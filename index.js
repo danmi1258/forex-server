@@ -15,7 +15,7 @@ var apiRoutes = require('./app/routes');
 var app = express();
 var server = http.createServer(app);
 var sessionStore = new MongoStore({'db': mongoose.connections[0].name});
-var slack = require('./app/integrations/slack').default;
+var slack = require('./app/integrations/slack');
 require('./app/sockets/webSocket/socketIO')(server, sessionStore);
 
 
@@ -77,12 +77,10 @@ app.use(function(err, req, res, next) {
 
 /****   S E R V E R    **********************************************/
 
-var sbqt = '`';
-slack.send({
-    text: `Server started ${sbqt} port: ${config.get('server').port} host: ${config.get('server').host} ${sbqt} `,
-    channel: config.slack.systemChanel,
-    username: 'forexBot'
-})
+let sbqt = '`';
+let {port, host} = config.get('server');
+let message = `Сервер запущен. ${sbqt} prot:${port}, host:${host} ${sbqt}`;
+slack.actions.systemMessage(message);
 
 server.listen(config.get('server').port, function() {
     logger.info(`[Server]: Start server on port: ${config.get('server').port}`);

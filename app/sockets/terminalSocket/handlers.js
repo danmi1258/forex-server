@@ -7,10 +7,15 @@ import Args from 'args-js';
 import {print as p$} from '../../utils';
 
 /* memo */
+let getClientByTid = null;
 function _findClientByTid(tid, callback) {
-    let getClientByTid = require('../../models/methods').getClientByTid;
-    let sc = mdsoc.getSocketByTid(tid);
-    sc && sc.client ? callback(null, sc.client) : getClientByTid(tid, callback);
+    if (sc && sc.client) {
+        callback(null, sc.client);
+    } 
+    else {
+        if (!getClientByTid) getClientByTid = require('../../models/methods').getClientByTid;
+        getClientByTid(tid, callback);
+    }
 }
 
 export function messageBindReqHandler(socket, message) {
@@ -70,8 +75,13 @@ export function orderIndHandler(socket, message) {
     _findClientByTid(socket.tid, (err, client) => {
         if (err) return logger.error('[orderIndHandler#_findClientByTid]', err);
 
-        if (client._title === 'provider') {
-            client.checkOnChanges(message.data.open_orders, (err, res) => {
+        let {open_orders} = message.data;
+
+        if (client._title === 'provider' && socket.openOrdersCount !== open_orders.length) {
+            
+            socket.openOrdersCount = open_orders.length;
+            
+            client.checkOnChanges(open_orders, (err, res) => {
                 if (err) return logger.error('[orderIndHandler#checkOnChanges]', err);
 
                 res.newOrders ? async.eachSeries(res.newOrders, client.openOrder.bind(client)) : 0;
