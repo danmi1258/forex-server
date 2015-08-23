@@ -82,6 +82,7 @@ Subscriber.statics.handleMasterOrderOpen = function(_provider, _masterOrder, _ca
     });
 };
 
+
 Subscriber.statics.handleMasterOrderClose = function(_provider, _masterOrder, _callback) {
     var lp = lp$('handleMasterOrderClose');
     var self = this;

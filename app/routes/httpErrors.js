@@ -78,3 +78,7 @@ exports.UnprocessableEntity = function(message) {
 exports.serverError = function(message) {
     return new HttpError(500, 'InternalServerError', message || 'Internal Server Error');
 };
+
+exports.DbError = function(message) {
+    return new HttpError(500, 'InternalServerError', message || 'db error');
+}

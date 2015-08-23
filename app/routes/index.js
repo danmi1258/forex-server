@@ -19,7 +19,7 @@ router.post('/login', passport.authenticate('local'), authRoutes.login);
 
 router.get('/providers', providerRoutes.GET.providers);
 router.get('/providers/:id', providerRoutes.GET.provider);
-router.get('/providers/:id/orders', providerRoutes.GET.orders);
+// router.get('/providers/:id/orders', providerRoutes.GET.orders);
 router.get('/providers/:id/subscribers', providerRoutes.GET.subscribers);
 
 router.post('/providers', providerRoutes.POST.provider);
@@ -35,7 +35,7 @@ router.put('/providers/:id', providerRoutes.PUT.provider);
 
 router.get('/subscribers', subscriberRoutes.GET.subscribers);
 router.get('/subscribers/:id', subscriberRoutes.GET.subscriber);
-router.get('/subscribers/:id/orders', subscriberRoutes.GET.orders);
+// router.get('/subscribers/:id/orders', subscriberRoutes.GET.orders);
 router.get('/subscribers/:id/subscriptions', subscriberRoutes.GET.subscriptions);
 
 router.post('/subscribers', subscriberRoutes.POST.subscriber);
@@ -50,6 +50,7 @@ router.put('/subscribers/:id', subscriberRoutes.PUT.subscriber);
 
 router.get('/orders');
 router.get('/orders/:id');
+router.get('/:client/:id/orders', orderRoutes.GET.orders);
 
 router.post('/orders/');
 router.post('/orders/:id/close');
