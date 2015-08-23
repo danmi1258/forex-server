@@ -80,7 +80,7 @@ module.exports.POST = {
         });
     },
 
-    openOrder: function(req, res, done) {
+    order: function(req, res, done) {
 
         async.waterfall([
             function(next) {

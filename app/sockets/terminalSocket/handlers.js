@@ -97,7 +97,7 @@ export function orderIndHandler(socket, message) {
 
 export function orderOpenReqHandler(tid, order) {
 
-    let socket = mdsoc.gegSocketByTid(tid);
+    let socket = mdsoc.getSocketByTid(tid);
     if (!socket) return logger.warn(`Запрос на создание ордера не удачный. Терминал tid:${tid} в офлайне`);
 
     try {
@@ -130,7 +130,7 @@ export function orderOpenReqHandler(tid, order) {
 
 export function orderCloseReqHandler(tid, order) {
 
-    let socket = mdsoc.gegSocketByTid(tid);
+    let socket = mdsoc.getSocketByTid(tid);
     if (!socket) return logger.warn(`Терминал tid=${args.client.tid} в офлайне`);
 
     try {

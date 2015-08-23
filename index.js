@@ -65,7 +65,7 @@ app.use(function(req, res) {
 
 /* error handler */
 app.use(function(err, req, res, next) {
-    logger.error(err.message);
+    logger.error(err);
     res.status(err.status || 500).json({
         status: err.status,
         name: err.name,

@@ -1,5 +1,5 @@
-import { Subscriber, Provider, Order } from '../models';
-import { badRequest, DbError } from './httpErrors';
+import { Subscriber, Provider, Order, getModel } from '../models';
+import { badRequest, DbError, routNotFound } from './httpErrors';
 import logger from '../utils/logger';
 import async from 'async';
 import _ from 'underscore';
@@ -38,7 +38,24 @@ export const GET = {
 /* ########  POST METHODS ################################ */
 
 export const POST = {
+    order (req, res, next) {
+        let data = _.clone(req.body);
+        const {client, id} = req.params;
+        const Model = getModel(client);
 
+        if (!Model) return next(routNotFound());
+        
+        async.waterfall([
+            function (next) {
+                Model.findById({_id: id}, next);
+            },
+            function (client, next) {
+                client.openOrder(data, next);
+            }
+        ], (err, order) => {
+            err ? next(err) : res.json(order);
+        })
+    }
 };
 
 

@@ -144,7 +144,7 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
         }
 
         logger.info(lp, 'новый ордер добавлен в БД', p$(order));
-        orderOpenReqHandler(args.client.tid, data);
+        orderOpenReqHandler(args.client.tid, order);
         args.callback(null, order);
     });
 };
