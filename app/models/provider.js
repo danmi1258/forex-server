@@ -92,7 +92,7 @@ Pr.openOrder = function(values, callback) {
             logger.info(lp, 'complete successfully', p$(order));
         }
 
-        callback(null, order);
+        callback(err, order);
     });
 };
 
