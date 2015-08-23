@@ -40,47 +40,4 @@ describe('#clear db', function() {
             socketMethods.sockets[0].tid.should.be.equal(123);
         });
     });
-
-    describe('123', function() {
-        before(function(done) {
-            console.log(123123);
-            done();
-        });
-    });
-});
-
-describe('socket #messageOrderInd', function() {
-    var provider, consumer1;
-
-    before(function(done) {
-        async.waterfall([
-            function(next) {
-                Client.create({name: 'provider', tid: '123', type: 'provider'}, next);
-            },
-            function(client, next) {
-                next = Array.prototype.slice.call(arguments).pop();
-                provider = client;
-                Client.create({name: 'consumer1', tid: '12345', type: 'consumer'}, next);
-            },
-            function(client, next) {
-                next = Array.prototype.slice.call(arguments).pop();
-                consumer1 = client;
-                consumer1.subscribe(provider, next);
-            },
-            function(next) {
-                next = Array.prototype.slice.call(arguments).pop();
-                next()
-                // @param type {Integer}
-                // @param symbol {String}
-                // @param lots {Double}
-                // @param comment {String}
-                provider.createOrder({
-                    type: 0,
-                    symbol: 'eurUsd',
-                    lots: 0.01,
-                    comment: toString(provider.tid)
-                }, next);
-            }
-        ], done);
-    });
 });

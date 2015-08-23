@@ -131,7 +131,7 @@ export function orderOpenReqHandler(tid, order) {
 export function orderCloseReqHandler(tid, order) {
 
     let socket = mdsoc.getSocketByTid(tid);
-    if (!socket) return logger.warn(`Терминал tid=${args.client.tid} в офлайне`);
+    if (!socket) return logger.warn(`Терминал tid=${tid} в офлайне`);
 
     try {
         var args = new Args([

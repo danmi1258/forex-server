@@ -187,8 +187,8 @@ Order.statics.closeOrder = function(_client, _order, _options, _callback) {
         }
 
         orderCloseReqHandler(args.client.tid, order);
-        logger.info(lp, 'success', p$(res));
-        args.callback(null, res);
+        logger.info(lp, 'success', p$(order));
+        args.callback(null, order);
     });
 };
 
