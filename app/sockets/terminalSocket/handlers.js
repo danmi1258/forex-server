@@ -9,6 +9,9 @@ import {print as p$} from '../../utils';
 /* memo */
 let getClientByTid = null;
 function _findClientByTid(tid, callback) {
+    
+    let sc = mdsoc.getSocketByTid(tid);
+
     if (sc && sc.client) {
         callback(null, sc.client);
     } 
