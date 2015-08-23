@@ -1,6 +1,5 @@
 var mongoose = require('mongoose');
 var BaseSchema = require('./client');
-var Order = require('./order');
 var Subscriber = require('./subscriber');
 var config = require('config');
 var orderStates = config.orderStates;
@@ -12,6 +11,7 @@ var lp$ = utils.logPrefix;
 var logger = require('../utils/logger');
 var Args = require('args-js');
 require('mongoose-schema-extend');
+var Order = require('./order');
 
 
 /**

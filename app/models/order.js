@@ -1,17 +1,18 @@
+require('mongoose-schema-extend');
 var mongoose = require('mongoose');
 var BaseSchema = require('./base');
 var logger = require('../utils/logger');
 var Args = require('args-js');
 var config = require('config');
 var _ = require('underscore');
-// var Socket = require('../socket');
-var socketProxy = require('../socketProxy');
 var utils = require('../utils');
-var p$ = utils.print;
-var lp$ = utils.logPrefix;
 var async = require('async');
 var slack = require('../integrations/slack');
-require('mongoose-schema-extend');
+var orderOpenReqHandler = require('../sockets/terminalSocket/handlers').orderOpenReqHandler;
+var orderCloseReqHandler = require('../sockets/terminalSocket/handlers').orderCloseReqHandler;
+let getSocketByTid = require('../sockets/terminalSocket/socket').getSocketByTid;
+var p$ = utils.print;
+var lp$ = utils.logPrefix;
 
 
 /**
@@ -142,41 +143,16 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
             return args.callback(err);
         }
 
-        /* post action on slack */
-        slack.actions.createNewOrder(args.client, order);
-
-        /* send ORDER_OPEN_REQ signal to the terminal */
-        if (args.options.confirm) {
-            logger.info(lp, 'send request to the terminal');
-            var socket = socketProxy.getSocketByTid(args.client.tid);
-            var socketServer = socketProxy.getServer();
-
-            if (!socket) {
-                logger.warn('terminal with tid=(%d) is offline', args.client.tid);
-            }
-            else {
-                socketServer.send(socket, {
-                    type: config.messageTypes.ORDER_OPEN_REQ,
-                    reference: order.reference,
-                    data: {
-                        type: order.type,
-                        symbol: order.symbol,
-                        lots: order.lots,
-                        comment: order.comment || "default comment"
-                    }
-                });
-                logger.info(lp, 'The request is sent successfully');
-            }
-        }
-
-        logger.info(lp, 'new order created', p$(order));
+        logger.info(lp, 'новый ордер добавлен в БД', p$(order));
+        orderOpenReqHandler(args.client.tid, data);
         args.callback(null, order);
     });
 };
 
+
 Order.statics.closeOrder = function(_client, _order, _options, _callback) {
     var lp = lp$('Order#openOrder');
-    logger.info(lp, 'begin close order', p$(_client));
+    logger.info(lp, 'begin', p$(_client));
     
     /* specify aruments */
     try {
@@ -193,51 +169,29 @@ Order.statics.closeOrder = function(_client, _order, _options, _callback) {
     }
 
     /* Check prop types for terminal. It protects terminal script fail */
-        try {
-            new Args([
-                {type: Args.INT | Args.Required},
-                {lots: Args.FLOAT | Args.Required}
-            ], [args.order])
-        } catch(err) {
-            return logger.error(lp, 'arguments error', err);
-        }
+    try {
+        new Args([
+            {type: Args.INT | Args.Required},
+            {lots: Args.FLOAT | Args.Required}
+        ], [args.order])
+    } catch(err) {
+        return logger.error(lp, 'arguments error', err);
+    }
 
     args.order.state = args.options.confirm ? config.orderStates.CLOSING : config.orderStates.CLOSED;
 
-    args.order.save(function(err, res) {
+    args.order.save(function(err, order) {
         if (err) {
-            logger.error(lp, 'db error');
+            logger.error(lp, 'db error', err);
             return args.callback(err);
         }
 
-        /* post action on slack */
-        slack.actions.closeOrder(args.client, res);
-
-        /* send ORDER_OPEN_REQ signal to the terminal */
-        if (args.options.confirm) {
-            logger.info(lp, 'send request on closing to the terminal');
-            var socket = socketProxy.getSocketByTid(args.client.tid);
-            var socketServer = socketProxy.getServer();
-
-            if (!socket) {
-                logger.warn('terminal with tid=(%d) is offline', args.client.tid);
-            }
-            else {
-                socketServer.send(socket, {
-                    type: config.messageTypes.ORDER_CLOSE_REQ,
-                    data: {
-                        ticket: args.order.ticket,
-                        lots: args.order.lots
-                    }
-                });
-                logger.info(lp, 'The request is sent successfully');
-            }
-        }
-
-        logger.info(lp, 'order closed', p$(res));
+        orderCloseReqHandler(args.client.tid, order);
+        logger.info(lp, 'success', p$(res));
         args.callback(null, res);
     });
 };
+
 
 Order.statics.saveHistory = function(_orderTicket, _data, _callback) {
     

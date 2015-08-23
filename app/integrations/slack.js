@@ -13,6 +13,14 @@ export let __useDefault = true;
 export default slack;
 
 export const actions = {
+    systemMessage (message) {
+        slack.send({
+            text: message,
+            channel: systemChannel,
+            username: slackUsername
+        });
+    },
+
     terminalConnected (client = {}) {
         slack.send({
             text: `Терминал подключился по сокету ${print(client)}`,

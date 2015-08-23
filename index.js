@@ -12,12 +12,12 @@ var auth = require('./app/middleware/auth').auth;
 var cors = require('cors');
 var logger = require('./app/utils/logger');
 var apiRoutes = require('./app/routes');
-var socket = require('./app/socket');
 var app = express();
 var server = http.createServer(app);
 var sessionStore = new MongoStore({'db': mongoose.connections[0].name});
 var slack = require('./app/integrations/slack').default;
 require('./app/sockets/webSocket/socketIO')(server, sessionStore);
+
 
 // var agent = require('webkit-devtools-agent');
 // agent.start()
@@ -37,6 +37,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+var socket = require('./app/sockets/terminalSocket/socket');
 socket.start();
 
 /* ***********************/
