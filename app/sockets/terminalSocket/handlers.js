@@ -1,13 +1,18 @@
+/* WARN!  don't import any model here */
+
 import * as mdsoc from './socket';
 import * as slack from '../../integrations/slack';
 import {messageTypes} from 'config';
 import logger from '../../utils/logger';
 import async from 'async';
 import Args from 'args-js';
-import {print as p$} from '../../utils';
+import {print as p$, logPrefix as lp$, printError} from '../../utils';
 
-/* memo */
+
+/* @memo for import. */
 let getClientByTid = null;
+let Order = null;
+
 function _findClientByTid(tid, callback) {
     
     let sc = mdsoc.getSocketByTid(tid);
@@ -42,6 +47,7 @@ export function messageBindReqHandler(socket, message) {
         socket.client = client;
         socket.tid = message.data.tid;
         socket.openOrdersCount = null;
+        socket.lastProfit = null;
 
         /* store socket */
         mdsoc.storeSocket(socket);
@@ -57,23 +63,35 @@ export function messageBindReqHandler(socket, message) {
     })
 }
 
+/* @ memo for order histtory */
+function memIfChanged(socket, profit, storeCb) {
+    if (socket.lastProfit === null || socket.lastProfit !== profit) {
+        socket.lastProfit = profit;
+        storeCb();
+    }
+}
+
 export function orderIndHandler(socket, message) {
 
+    !Order ? Order = require('../../models/order') : 0;
+    
     /* map message for history data */
-                    // var datas = message.data.open_orders.map(function(e) {
-                    //     return {
-                    //         lots: e.lots,
-                    //         profit: e.profit,
-                    //         swap: e.swap,
-                    //         time: new Date().getTime(),
-                    //         ticket: e.ticket
-                    //     };
-                    // });
+    var datas = message.data.open_orders.map((e) => {
+        return {
+            lots: e.lots,
+            profit: e.profit,
+            swap: e.swap,
+            time: new Date().getTime(),
+            ticket: e.ticket
+        }
+    });
 
-                    // /* save history */
-                    // datas.forEach(function(e) {
-                    //     Order.saveHistory(e.ticket, e);
-                    // });
+    /* save history */
+    datas.forEach(function(e) {
+        let storeCb = Order.saveHistory.bind(Order, e.ticket, e);
+        memIfChanged(socket, e.profit, storeCb);
+    });
+
 
     _findClientByTid(socket.tid, (err, client) => {
         if (err) return logger.error('[orderIndHandler#_findClientByTid]', err);
@@ -87,8 +105,8 @@ export function orderIndHandler(socket, message) {
             client.checkOnChanges(open_orders, (err, res) => {
                 if (err) return logger.error('[orderIndHandler#checkOnChanges]', err);
 
-                res.newOrders ? async.eachSeries(res.newOrders, client.openOrder.bind(client)) : 0;
-                res.closedOrders ? async.eachSeries(res.closedOrders, client.closeOrder.bind(client)) :  0;
+                res.newOrders ? async.eachSeries(res.newOrders, client.openOrder.bind(client), printError) : 0;
+                res.closedOrders ? async.eachSeries(res.closedOrders, client.closeOrder.bind(client), printError) :  0;
             });
         }
     });
@@ -96,9 +114,13 @@ export function orderIndHandler(socket, message) {
 
 
 export function orderOpenReqHandler(tid, order) {
+    const lp = lp$('orderOpenReqHandler');
 
     let socket = mdsoc.getSocketByTid(tid);
-    if (!socket) return logger.warn(`Запрос на создание ордера не удачный. Терминал tid:${tid} в офлайне`);
+    
+    if (!socket) {
+        return logger.warn(`Неудачный запрос. Терминал tid:${tid} в офлайне`);
+    }
 
     try {
         var args = new Args([
@@ -124,14 +146,15 @@ export function orderOpenReqHandler(tid, order) {
         }
     };
 
-    socketServer.send(socket, data);
+    mdsoc.server.send(socket, data);
 }
 
 
 export function orderCloseReqHandler(tid, order) {
 
     let socket = mdsoc.getSocketByTid(tid);
-    if (!socket) return logger.warn(`Терминал tid=${tid} в офлайне`);
+
+    if (!socket) return logger.warn(`Неудачный запрос. Терминал tid=${tid} в офлайне`);
 
     try {
         var args = new Args([
@@ -141,7 +164,7 @@ export function orderCloseReqHandler(tid, order) {
         ], [order]);
     }
     catch(err) {
-        return logger.error('[orderCloseReqHandler]', err);
+        return logger.error('[orderCloseReqHandler] Ошибка аргументов.', err);
     }
 
     let data = {
@@ -153,15 +176,23 @@ export function orderCloseReqHandler(tid, order) {
         }
     }
 
-    socketServer.send(socket, data);
+    mdsoc.server.send(socket, data);
 }
 
 
 /* only for suscribers */
 export function orderOpenConfHandler(socket, message) {
+    const lp = lp$('orderOpenConfHandler');
+
+    /* handle terminal error */
+    if (message.code) return logger.error(`${lp} ошибка терминала. код:${message.code}`);
+
     _findClientByTid(socket.tid, (err, client) => {
-        if (err) return logger.error('[OrderOpenConfHandler]', err);
-        client.confirmOrderCreation(message.reference, message.data.ticket);
+        if (err) return logger.error(lp, err);
+
+        logger.info(`${lp} Терминал подтвердил открытие ордера. ${p$(client)}, ticket: ${message.data.ticket}`);
+        slack.actions.createNewOrder(client, message.data.ticket);
+        client.confirmOrderCreation(message.reference, message.data.ticket, printError);
         // перенести уведомление в функцию slack.actions.createNewOrder(client, order)
 
     });
@@ -169,8 +200,16 @@ export function orderOpenConfHandler(socket, message) {
 
 /* only for subscribers */
 export function orderCloseConfHandler(socket, message) {
+    const lp = lp$('orderCloseConfHandler');
+
+    /* handle terminal error */
+    if (message.code) return logger.error(`${lp} ошибка терминала. код:${message.code}`);
+
     _findClientByTid(socket.tid, (err, client) => {
-        if (err) return logger.error('[OrderCloseConfHandler]', err);
-        client.confirmOrderClosing(message.data.ticket);
+        if (err) return logger.error(lp, err);
+        
+        logger.info(`${lp} Терминал подтвердил закрытие ордера. ${p$(client)}, ticket: ${message.data.ticket}`);    
+        slack.actions.closeOrder(client, message.data.ticket);
+        client.confirmOrderClosing(message.data.ticket, printError);
     });
 }

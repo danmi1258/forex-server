@@ -31,6 +31,13 @@ export const GET = {
 
             res.json(q);
         })        
+    },
+
+    history(req, res, next) {
+        Order.findById(req.params.id, {history: 1}, (err, hist) => {
+            if (err) return next(err);
+            res.json(hist);
+        })
     }
 };
 

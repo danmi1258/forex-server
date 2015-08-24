@@ -4,7 +4,7 @@ import {print} from '../utils';
 
 const slack = new Slack('https://hooks.slack.com/services/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');
 // const slack = new Slack('https://hooks.slack.com/services/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');
-const {orderChanel, systemChannel} = config.slack;
+const {orderChannel, systemChannel} = config.slack;
 const slackUsername = 'forexBot'
 const sbqt = '`';
 
@@ -45,55 +45,40 @@ export const actions = {
         })
     },
 
-    createNewOrder (client = {}, order = {}) {
+    createNewOrder (client = {}, orderTicket) {
         let message;
 
         switch (client._title) {
             case 'provider':
-                message = `Провайдер открыл ордер ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
+                message = `Провайдер открыл ордер ${sbqt} [${print(client)}, ticket: ${orderTicket}] ${sbqt} `;
                 break;
             case 'subscriber':
-                if (order.state === config.orderStates.CREATING) {
-                    message = `Обработка открытия ордера для подписчика ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
-                }
-                else if (order.state === config.orderStates.CREATED) {
-                    message = `Подписчик открыл ордер ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
-                }
-
+                message = `Подписчик подтвердил открытие ордера ${sbqt} [${print(client)}, ticket: ${orderTicket}] ${sbqt} `;
                 break;
         }
 
         slack.send({
             text: message,
-            channel: orderChanel,
+            channel: orderChannel,
             username: slackUsername
         });
     },
 
-    closeOrder (client = {}, order = {}) {
+    closeOrder (client = {}, orderTicket) {
         let message;
 
         switch (client._title) {
             case 'provider':
-                message = `Провайдер закрыл ордер ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
+                message = `Провайдер закрыл ордер ${sbqt} [${print(client)}, ticket: ${orderTicket}] ${sbqt} `;
                 break;
-
             case 'subscriber':
-                if (order.state === config.orderStates.CLOSING) {
-                    message = `Обработка закрытия ордера для подписчика ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
-                }
-                else if (order.state === config.orderStates.CLOSED) {
-                    message = `Подписчик закрыл ордер ${sbqt} [${print(client)}, ${print(order)}] ${sbqt} `;
-                }
+                message = `Подписчик подтвердил закрытие ордера ${sbqt} [${print(client)}, ticket: ${orderTicket}] ${sbqt} `;
                 break;
-
-            default:
-                message = 'клиент не определен';
         }
 
         slack.send({
             text: message,
-            channel: orderChanel,
+            channel: orderChannel,
             username: slackUsername
         });
     }

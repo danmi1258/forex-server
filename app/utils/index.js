@@ -13,10 +13,10 @@ module.exports.print = function(object) {
 
     switch(object._title) {
         case 'provider':
-            return '{provider: {name:' + object.name + ', id:' + object.id + '}}';
+            return '{provider: {name:' + object.name + ', tid:' + object.tid + '}}';
 
         case 'subscriber':
-            return '{subscriber: {name:' + object.name + ', id:' + object.id + '}}';
+            return '{subscriber: {name:' + object.name + ', tid:' + object.tid + '}}';
         
         case 'order':
             return `{order: {ticket: ${object.ticket}, id: ${object._id} }}`;
@@ -25,6 +25,12 @@ module.exports.print = function(object) {
             return '[id=' + object.id + ']';
     }
 };
+
+module.exports.printError = function(err) {
+    if (err) {
+        logger.error(err);
+    }
+}
 
 module.exports.logPrefix = function(logPrefixName) {
     return '<' + Math.floor(Math.random() * 100000) + '>[' + logPrefixName + ']:';

@@ -42,7 +42,7 @@ Subscriber.statics.handleMasterOrderOpen = function(_provider, _masterOrder, _ca
         return args._callback(err);
     }
 
-    logger.info(lp, 'begin to copy master order for subscribers');
+    logger.info(lp, '***** Копирование ордеров для подписчиков ***** ');
     
     async.waterfall([
         function getSubscribers(next) {
@@ -50,7 +50,7 @@ Subscriber.statics.handleMasterOrderOpen = function(_provider, _masterOrder, _ca
         },
         function openOrderForEach(res, next) {
             if (!res.length) {
-                logger.info('provider has no subscribers. Exit.');
+                logger.info(lp, 'Активные подписчики не найдены.');
                 args.callback();
             }
             else {
@@ -74,12 +74,7 @@ Subscriber.statics.handleMasterOrderOpen = function(_provider, _masterOrder, _ca
                 async.eachSeries(res, proxy, next);
             }
         }
-    ], function(err) {
-        err ? logger.error(lp, 'complete with error', err) :
-              logger.info(lp, 'complete successfully');
-        args.callback();
-
-    });
+    ], args.callback);
 };
 
 
@@ -98,8 +93,6 @@ Subscriber.statics.handleMasterOrderClose = function(_provider, _masterOrder, _c
         logger.error(err);
         return args._callback(err);
     }
-
-    logger.info(lp, 'begin to process closing order');
 
     async.waterfall([
         function getRelatedOrders(next) {
@@ -124,11 +117,7 @@ Subscriber.statics.handleMasterOrderClose = function(_provider, _masterOrder, _c
                 async.eachSeries(res, proxy, next);
             }
         }
-    ], function(err) {
-        err ? logger.error(lp, 'complete with error', err) :
-              logger.info(lp, 'complete successfully');
-        args.callback();
-    });
+    ], args.callback);
 };
 
 
@@ -137,7 +126,6 @@ Subscriber.statics.handleMasterOrderClose = function(_provider, _masterOrder, _c
 Su.subscribe = function(providerId, callback) {
     var lp = lp$('subscribe');
     var self = this;
-    logger.info(lp, 'begin to subscribe on provider=%s', providerId, p$(this));
 
     try {
         var args = new Args([
@@ -151,22 +139,16 @@ Su.subscribe = function(providerId, callback) {
 
     if (this.subscriptions.indexOf(args.providerId) === -1) {
         this.subscriptions.push(providerId);
-        this.save(function(err, res) {
-            err ? logger.error(lp, 'subscribe complite with error', err) :
-                  logger.info(lp, 'subscribe complite successfully');
-            callback(err, res);
-        });
+        this.save(callback);
     }
     else {
-        logger.warn(lp, 'subscription already exists');
-        callback(null, self);
+        callback(Error('subscriptions already exists'));
     }
 };
 
 Su.unsubscribe = function(providerId, callback) {
     var lp = lp$('subscribe');
     var self = this;
-    logger.info(lp, 'begin to unsubscribe from provider=%s', providerId, p$(this));
 
     try {
         var args = new Args([
@@ -181,15 +163,10 @@ Su.unsubscribe = function(providerId, callback) {
     var index = this.subscriptions.indexOf(args.providerId);
     if (index !== -1) {
         this.subscriptions.splice(index, 1);
-        this.save(function(err, res) {
-            err ? logger.error(lp, 'unsubscribe complite with error', err) :
-                  logger.info(lp, 'unsubscribe complite successfully');
-            callback(err, res);
-        });
+        this.save(callback);
     }
     else {
-        logger.warn(lp, 'subscription not found');
-        callback(null, self);
+        callback(new Error('Подписка не найдера'));
     }
 };
 
@@ -208,7 +185,6 @@ Su.confirmOrderCreation = function(_ref, _ticket, _callback) {
     }
 
     var lp = lp$('confirmOrderCreation');
-    logger.info('lp', 'begin', p$(this), 'ref =', args.ref);
 
     Order.findOne({reference: args.ref}, function(err, order) {
         if (err) {
@@ -219,18 +195,13 @@ Su.confirmOrderCreation = function(_ref, _ticket, _callback) {
         order.state = config.orderStates.CREATED;
         order.ticket = args.ticket;
 
-        order.save(function(err, res) {
-            err ? logger.error(lp, 'Error', err) :
-                  logger.info(lp, `Success. [order.ticket=${res.ticket}`);
-
-            args.callback(null, res);
-        });
+        order.save(args.callback);
     });
 };
 
 Su.confirmOrderClosing = function(_ticket, _callback) {
     var lp = lp$('confirmOrderClosing');
-    logger.info(lp, 'begin order closing for client', p$(this), 'ticket=', _ticket);
+    // logger.info(lp, 'begin order closing for client', p$(this), 'ticket=', _ticket);
 
     try {
         var args = new Args([
@@ -246,20 +217,17 @@ Su.confirmOrderClosing = function(_ticket, _callback) {
     Order.findOne({ticket: args.ticket}, function(err, res) {
         if (err) {
             logger.error(lp, 'db error. Exit', err);
-            return args.callback(null, res);
+            return args.callback(err);
         }
 
         if (!res) {
-            console.error(lp, 'try to change state from order, but it not found by ticket=', args.ticket);
-            args.callback(null);
+            logger.error(lp, `Ордер не найден: ${args.ticket}`);
+            return args.callback(err);
         }
 
         res.state = config.orderStates.CLOSED;
-        res.save(function(err, res) {
-            err ? logger.error(lp, 'complite with error', err) :
-                  logger.info(lp, 'complite successfully');
-            args.callback(null, res);
-        });
+
+        res.save(args.callback);
     });
 };
 

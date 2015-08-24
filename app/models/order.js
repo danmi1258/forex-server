@@ -33,6 +33,8 @@ var Order = BaseSchema.extend({
     lots: {type: Number, required: true},
     // status: 11-opening, 12-opened, 21-closing, 22-closed
     state: {type: Number, default: 0},
+    /* comment for terminal order */
+    comment: {type: String, default: 'comment', required: true},
     /* History of the trading. Hash:
         {profit[number]}
     */
@@ -44,7 +46,8 @@ var Order = BaseSchema.extend({
     // self unic reference
     reference: String,
     // id of the master (generating) order
-    masterOrderId: String
+    masterOrderId: String,
+
 });
 
 
@@ -95,7 +98,7 @@ Order.statics.getByReference = function(ref, callback) {
 */
 Order.statics.openOrder = function(_client, _values, _options, _callback) {
     var lp = lp$('Order#openOrder');
-    logger.info(lp, 'begin create new order', p$(_client));
+    // logger.info(lp, 'begin create new order', p$(_client));
 
     /* specify aruments */
     try {
@@ -117,7 +120,7 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
             {type: Args.INT | Args.Required},
             {lots: Args.FLOAT | Args.Required},
             {symbol: Args.STRING | Args.Required},
-            {comment: Args.STRING | Args.Optional, _default: "comment"},
+            {comment: Args.STRING | Args.Optional, _default: "default comment"},
             {ticket: Args.INT | (args.client._title === 'provider' ? Args.Required : Args.Optional)},
             {masterOrderId: Args.STRING | (args.client._title === 'provider' ? Args.Optional : Args.Required)}
         ], [args.values]);
@@ -143,16 +146,18 @@ Order.statics.openOrder = function(_client, _values, _options, _callback) {
             return args.callback(err);
         }
 
-        logger.info(lp, 'новый ордер добавлен в БД', p$(order));
-        orderOpenReqHandler(args.client.tid, order);
+        /* не посылать приказ на открытие ордера на терминал, не требуется подтверждение */
+        if (args.options.confirm) {
+            orderOpenReqHandler(args.client.tid, order);
+        }
+
         args.callback(null, order);
     });
 };
 
 
 Order.statics.closeOrder = function(_client, _order, _options, _callback) {
-    var lp = lp$('Order#openOrder');
-    logger.info(lp, 'begin', p$(_client));
+    var lp = lp$('Order#closeOrder');
     
     /* specify aruments */
     try {
@@ -178,6 +183,12 @@ Order.statics.closeOrder = function(_client, _order, _options, _callback) {
         return logger.error(lp, 'arguments error', err);
     }
 
+    /* проверка статуса ордера. не работает для подписчика, т.к. подписчик не сверяет ордера. */
+    if (args.order.state === config.orderStates.CLOSED) {
+        return args.callback(Error('Ошибка изменении статуса ордера. Ордер уже закрыт'));
+    }
+
+    /* статус */
     args.order.state = args.options.confirm ? config.orderStates.CLOSING : config.orderStates.CLOSED;
 
     args.order.save(function(err, order) {
@@ -186,9 +197,13 @@ Order.statics.closeOrder = function(_client, _order, _options, _callback) {
             return args.callback(err);
         }
 
-        orderCloseReqHandler(args.client.tid, order);
-        logger.info(lp, 'success', p$(order));
-        args.callback(null, order);
+        /* не посылать приказ на закрытие ордера на терминал, если не требуется подтверждение */
+        if (args.options.confirm) {
+            orderCloseReqHandler(args.client.tid, order);
+        }
+
+        
+        args.callback(err, order);
     });
 };
 
@@ -203,7 +218,7 @@ Order.statics.saveHistory = function(_orderTicket, _data, _callback) {
         var args = new Args([
             {orderTicket: Args.INT | Args.Required},
             {data: Args.OBJECT | Args.Required},
-            {callback: Args.FUNCTION | Args.Optional, _default: Function}
+            {callback: Args.FUNCTION | Args.Optional, _default: function() {}}
         ], arguments);
     }
     catch(err) {
@@ -229,12 +244,7 @@ Order.statics.saveHistory = function(_orderTicket, _data, _callback) {
             order.history.push(args.data);
             order.save(next);
         }
-    ], function(err, res) {
-        if (err) {
-            logger.info(lp, 'Error save history to the order', err);
-            args.callback();
-        }
-    });
+    ], args.callback);
 };
 
 /* EXPORTS

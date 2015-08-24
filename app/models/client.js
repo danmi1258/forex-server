@@ -21,5 +21,6 @@ module.exports = BaseSchema.extend({
         type: Number,
         required: true,
         unique: true
-    }
+    },
+    netStatus: {type: Boolean, default: false}
 });

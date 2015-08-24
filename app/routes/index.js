@@ -50,6 +50,7 @@ router.put('/subscribers/:id', subscriberRoutes.PUT.subscriber);
 
 router.get('/orders');
 router.get('/orders/:id');
+router.get('/orders/:id/history', orderRoutes.GET.history);
 router.get('/:client/:id/orders', orderRoutes.GET.orders);
 
 router.post('/orders/');
