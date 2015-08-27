@@ -4,7 +4,6 @@ var Errors = require('./httpErrors');
 var badRequestError = Errors.badRequest;
 var async = require('async');
 var _ = require('underscore');
-var mixin = require('../models/mixin/clientMixin');
 
 
 /* ########  GET METHODS ################################*/
@@ -16,7 +15,7 @@ module.exports.GET = {
                 return next(badRequestError(err.message));
             }
 
-            mixin(providers, req, res, next);
+            res.json(providers);
         });
     },
 

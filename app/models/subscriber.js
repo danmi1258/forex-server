@@ -139,7 +139,7 @@ Su.subscribe = function(providerId, callback) {
 
     if (this.subscriptions.indexOf(args.providerId) === -1) {
         this.subscriptions.push(providerId);
-        this.save(callback);
+        this.save((err, res) => callback(err, res));
     }
     else {
         callback(Error('subscriptions already exists'));
@@ -237,7 +237,7 @@ Su._getMatchedLot = function(providerId) {
 
 Su.setMatchedLots = function(providerId, lot, callback) {
     this.matchedLots[providerId] = lot;
-    this.save(callback);
+    this.save((err, res) => callback(err, res));
 };
 
 
