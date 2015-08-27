@@ -22,7 +22,7 @@ require('./app/sockets/webSocket/socketIO')(server, sessionStore);
 // var agent = require('webkit-devtools-agent');
 // agent.start()
 
-app.use(cors({origin: /localhost.*/, credentials: true}));
+app.use(cors({origin: true, credentials: true}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'app/static/client')));
