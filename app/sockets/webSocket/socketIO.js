@@ -1,10 +1,11 @@
-var config = require('config');
-var passportSocketIo = require('passport.socketio');
-var cookieParser = require('cookie-parser');
+import config from 'config';
+import cookieParser from 'cookie-parser';
+import passportSocketIo from 'passport.socketio';
+import Emitter from './socketEmitter';
 
 
-module.exports = function(server, sessionStore) {
-    var io = require('socket.io')(server);
+export default function(server, sessionStore) {
+    let io = require('socket.io')(server);
 
     io.set('authorization', passportSocketIo.authorize({
         cookieParser: cookieParser,
@@ -29,5 +30,5 @@ module.exports = function(server, sessionStore) {
         accept(null, false);
     }
 
-    require('./socketEmitter')(io);
+    Emitter(io);
 };

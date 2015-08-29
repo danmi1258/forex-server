@@ -1,4 +1,5 @@
 import _ from 'underscore';
+import logger from '../utils/logger';
 import config from 'config';
 import express from 'express';
 import authRoutes from './authRoutes';
@@ -8,11 +9,24 @@ import restify from 'express-restify-mongoose';
 import {Provider, Subscriber, Order} from '../models';
 import providerRoutes from './providerRoutes';
 import subscriberRoutes from './subscriberRoutes';
+import {emit, events, normalize} from '../sockets/webSocket';
 
 
 const router = new express.Router();
 
+/** 
+Allow to create custom routing on restfull 
+
+Example:
+GET /api/v1/providers/:id/orders?q
+to:
+GET /api/v1/orders?q&client=:id
+
+@param qExt {Object | String} extension for query
+@param url {String} new url. Ex: /api/v1/[url]
+*/
 function redirect(qExt, url='', req, res) {
+    
     let query = '?';
     const {host, port} = config.server;
 
@@ -26,9 +40,35 @@ function redirect(qExt, url='', req, res) {
 }
 
 
-restify.serve(router, Order);
-restify.serve(router, Provider, {lean: false});
-restify.serve(router, Subscriber, {lean: false});
+/* set default options for restify */
+const defaultOptions = {
+    lean: false,
+    outputFn (req, res, data) {
+        /* send data */
+        res.json(data.result);
+        /* ignore GET method */
+        if (req.method === 'GET') return;
+        /* create data object for socket */
+        const result = normalize(req, data.result);
+        /* try to get event name automaticaly */
+        try {
+            const eventName = events[req.path.split('/')[3]][result.action];
+        }
+        catch (err) {
+            logger.error('web socket error', err);
+            return;
+        }
+        /* send socket event from all active clients */
+        emit(eventName, normalize(req, data.result));
+    }
+}
+
+
+/* set restify routes */
+restify.serve(router, Order, defaultOptions);
+restify.serve(router, Provider, defaultOptions);
+restify.serve(router, Subscriber, defaultOptions);
+
 
 /**** AUTH    R O U T E S *************************************/
 
@@ -73,5 +113,9 @@ router.post('/subscribers/:id/unsubscribe', subscriberRoutes.POST.unsubscribe);
 
 // router.get('/terminals/', terminalRoutes.GET.terminals);
 
+router.get('/api/v1/test', function(req, res, next) {
+    // emit({a:1});
+    res.json('ok');
+})
 
 export default router;

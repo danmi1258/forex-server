@@ -3,7 +3,7 @@ var server = require( 'gulp-develop-server' );
 var yuidoc = require('gulp-yuidoc');
 
 
-var serverFiles = ['./app.js', 'app/*/*.js'];
+var serverFiles = ['./app.js', 'app/**/*.js'];
 // run server
 gulp.task( 'server:start', function() {
     server.listen( { path: './app.js' } );

@@ -1,48 +1,19 @@
-/* web socket events */
+export default {
+    subscribers: {
+        create: 'SUBSCRIBER_CREATED',
+        update: 'SUBSCRIBER_UPDATED',
+        delete: 'SUBSCRIBER_DELETED'
+    },
 
-module.exports.events = {
-    /*
-    hash:
-    {
-        client: Object,
-        action: 'created, updated, deleted',
-        Affectedfields: {} // for updated action only
-    }
-    */
-    clientAction: 'CLIENT_ACTION',
-    
-    /*
-    hash:
-    {
-        subscriber: Object
-        provider: Object
-        action: subscribe/unsubscribe
-    }
-    */
-    subscriptionAction: 'SUBSCRIPTION_ACTION',
-    
-    /*
-    Order actions
-    =============
-    {
-        order: Object,
-        owner: Object
-        action: 'created, updated, deleted',
-        Affectedfields: {} // for updated action only
-    }
-    */
+    providers: {
+        create: 'PROVIDER_CREATED',
+        update: 'PROVIDER_UPDATED',
+        delete: 'PROVIDER_DELETED'
+    },
 
-    orderAction: 'ORDER_ACTION',
-
-    /*
-    Terminal action
-    ===============
-
-    {
-        client: Object
-        action: connected/disconnected
-    }
-    */
-
-    terminalAction: 'TERMINAL_ACTION'
+    orders: {
+        create: 'OPRDER_CREATED',
+        update: 'OPRDER_UPDATED',
+        delete: 'OPRDER_DELETED'
+    },
 }
