@@ -1,12 +1,13 @@
-var mongoose = require('mongoose');
-var BaseSchema = require('./base');
-require('mongoose-schema-extend');
+import mongoose from 'mongoose';
+import BaseSchema from './base';
+import {getSocketByTid} from '../sockets/terminalSocket/socket';
+import 'mongoose-schema-extend';
 
 /**
     @class Client
     @extends Default
  */
-module.exports = BaseSchema.extend({
+let Schema = BaseSchema.extend({
     name: {
         type: String,
         required: true,
@@ -21,6 +22,16 @@ module.exports = BaseSchema.extend({
         type: Number,
         required: true,
         unique: true
-    },
-    netStatus: {type: Boolean, default: false}
+    }
 });
+
+Schema.virtual('online')
+    .get(function() {
+        return !!getSocketByTid(this.tid);
+    });
+
+Schema.set('toObject', { virtuals: true });
+Schema.set('toJSON', { virtuals: true });
+
+
+export default Schema;

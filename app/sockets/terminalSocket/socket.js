@@ -3,7 +3,7 @@ import config, {messageTypes} from 'config';
 import async from 'async';
 import _ from 'underscore';
 import logger from '../../utils/logger';
-import slack from '../../integrations/slack';
+import {actions} from '../../integrations/slack';
 import * as mh from './handlers';
 
 
@@ -32,7 +32,7 @@ export function storeSocket(socket) {
         sockets[ind] = socket;
         let message = `[storeSocket] Сокет tid=${socket.tid} был обновлен.`;
         logger.warn(message);
-        slack.actions.systemMessage(message);
+        actions.systemMessage(message);
     }
 }
 
@@ -82,7 +82,8 @@ export function start() {
         removeSocket(socket);
         let message = `Терминал tid=${socket.tid} отключился`;
         logger.info(message);
-        slack.actions.systemMessage(message);
+
+        actions.systemMessage(message);
     });
 
 
@@ -126,21 +127,3 @@ export function start() {
         }
     });
 };
-
-// module.exports.getServer = function() {
-//     return server;
-// };
-
-// module.exports.getSocketByTid = getSocketByTid;
-
-// module.exports.tests = {
-//     getSocketByTid: getSocketByTid,
-//     storeSocket: storeSocket,
-//     removeSocket: removeSocket,
-//     authSocket: authSocket,
-//     messageBindReq: messageBindReq,
-//     sockets: sockets
-// };
-
-
-

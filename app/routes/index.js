@@ -27,8 +27,8 @@ function redirect(qExt, url='', req, res) {
 
 
 restify.serve(router, Order);
-restify.serve(router, Provider);
-restify.serve(router, Subscriber);
+restify.serve(router, Provider, {lean: false});
+restify.serve(router, Subscriber, {lean: false});
 
 /**** AUTH    R O U T E S *************************************/
 
