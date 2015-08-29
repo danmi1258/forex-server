@@ -11,11 +11,12 @@ var MongoStore = require('connect-mongostore')(session);
 var auth = require('./app/middleware/auth').auth;
 var cors = require('cors');
 var logger = require('./app/utils/logger');
-var apiRoutes = require('./app/routes');
+var router = require('./app/routes');
 var app = express();
 var server = http.createServer(app);
 var sessionStore = new MongoStore({'db': mongoose.connections[0].name});
 var slack = require('./app/integrations/slack');
+
 require('./app/sockets/webSocket/socketIO')(server, sessionStore);
 
 
@@ -51,8 +52,7 @@ app.use(auth);
  /* ***********************/
 
 /* api route entry point */
-app.use('/api', apiRoutes);
-
+app.use(router);
 
 /* ***********************/
 /* E R R O R S

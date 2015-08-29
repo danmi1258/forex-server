@@ -1,11 +1,34 @@
-var express = require('express');
-var router = new express.Router();
-var providerRoutes = require('./providerRoutes');
-var subscriberRoutes = require('./subscriberRoutes');
-var terminalRoutes = require('./terminalRoutes');
-var orderRoutes = require('./orderRoutes');
-var authRoutes = require('./authRoutes');
-var passport = require('../utils/passport');
+import _ from 'underscore';
+import config from 'config';
+import express from 'express';
+import authRoutes from './authRoutes';
+import passport from '../utils/passport';
+import normalizeUrl from 'normalize-url';
+import restify from 'express-restify-mongoose';
+import {Provider, Subscriber, Order} from '../models';
+import providerRoutes from './providerRoutes';
+import subscriberRoutes from './subscriberRoutes';
+
+
+const router = new express.Router();
+
+function redirect(qExt, url='', req, res) {
+    let query = '?';
+    const {host, port} = config.server;
+
+    _.extend(req.query, _.isString(qExt) ? {[qExt]:req.params.id} : qExt);
+    _.each(req.query, (v,k) => {query += `${k}=${v}&`});
+
+    url = normalizeUrl(`${host}:${port}/api/v1/${url}`);
+    url += query;
+
+    res.redirect(url);
+}
+
+
+restify.serve(router, Order);
+restify.serve(router, Provider);
+restify.serve(router, Subscriber);
 
 /**** AUTH    R O U T E S *************************************/
 
@@ -13,55 +36,42 @@ router.get('/login', authRoutes.isLoggedIn);
 router.get('/logout', authRoutes.logout);
 router.post('/login', passport.authenticate('local'), authRoutes.login);
 
-// router.get('/logout', passport.logout);
 
 /**** P R O V I D E R    R O U T E S **************************/
 
-router.get('/providers', providerRoutes.GET.providers);
-router.get('/providers/:id', providerRoutes.GET.provider);
-// router.get('/providers/:id/orders', providerRoutes.GET.orders);
-router.get('/providers/:id/subscribers', providerRoutes.GET.subscribers);
+router.get('/api/v1/providers/:id/orders', redirect.bind(this, 'client', 'orders'));
+router.get('/api/v1/providers/:id/subscribers', providerRoutes.GET.subscribers);
 
-router.post('/providers', providerRoutes.POST.provider);
-// router.post('/providers/:id/openOrder', providerRoutes.POST.openOrder);
-// router.post('/providers/:id/stopSubscriptions', providerRoutes.POST.stopSubscriptions);
+router.post('/api/v1/providers/:id/openOrder', providerRoutes.POST.order);
+// router.post('/api/v1/providers/:id/stopSubscriptions', providerRoutes.POST.stopSubscriptions);
 
-router.put('/providers/:id', providerRoutes.PUT.provider);
-
-// router.delete('/providers', providerRoutes.DELETE.provider);
 
 
 /**** S U B S C R I B E R    R O U T E S  *********************/
 
-router.get('/subscribers', subscriberRoutes.GET.subscribers);
-router.get('/subscribers/:id', subscriberRoutes.GET.subscriber);
-// router.get('/subscribers/:id/orders', subscriberRoutes.GET.orders);
-router.get('/subscribers/:id/subscriptions', subscriberRoutes.GET.subscriptions);
+router.get('/api/v1/subscribers/:id/orders', redirect.bind(this, 'client', 'orders'));
+router.get('/api/v1/subscribers/:id/subscriptions', subscriberRoutes.GET.subscriptions);
 
-router.post('/subscribers', subscriberRoutes.POST.subscriber);
 router.post('/subscribers/:id/subscribe', subscriberRoutes.POST.subscribe);
 router.post('/subscribers/:id/unsubscribe', subscriberRoutes.POST.unsubscribe);
-
-router.put('/subscribers/:id', subscriberRoutes.PUT.subscriber);
-// router.put('/subscribers/:id/stopSubscription', subscriberRoutes.POST.stopSubscriptions);
 
 
 /**** O R D E R S    R O U T E S ******************************/
 
-router.get('/orders');
-router.get('/orders/:id');
-router.get('/orders/:id/history', orderRoutes.GET.history);
-router.get('/:client/:id/orders', orderRoutes.GET.orders);
+// router.get('/orders');
+// router.get('/orders/:id');
+// router.get('/orders/:id/history', orderRoutes.GET.history);
+// router.get('/:client/:id/orders', orderRoutes.GET.orders);
 
-router.post('/orders/');
-router.post('/orders/:id/close');
-router.post('/:client/:id/orders', orderRoutes.POST.order);
+// router.post('/orders/');
+// router.post('/orders/:id/close');
+// router.post('/:client/:id/orders', orderRoutes.POST.order);
 
-router.put('/orders/:id', orderRoutes.PUT.order);
+// router.put('/orders/:id', orderRoutes.PUT.order);
 
 /***  TERMINALS   *********************************************/
 
 // router.get('/terminals/', terminalRoutes.GET.terminals);
 
 
-module.exports = router;
+export default router;

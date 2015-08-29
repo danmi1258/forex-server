@@ -32,12 +32,16 @@ module.exports.GET = {
     },
 
     subscriptions: function(req, res, next) {
-        Provider.find({subscriber: req.params.id}, function(err, subscribers) {
-            if (err) {
-                return next(badRequestError(err.message));
+        async.waterfall([
+            function (next) {
+                Subscriber.findById(req.params.id, next);
+            },
+            function(res, next) {
+                Provider.find({_id: {$in: res.subscriptions}}, next);
             }
-
-            res.json(subscribers);
+        ], function(err, result) {
+            if (err) return next(err);
+            res.json(result);
         });
     },
 
