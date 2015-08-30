@@ -72,9 +72,9 @@ restify.serve(router, Subscriber, defaultOptions);
 
 /**** AUTH    R O U T E S *************************************/
 
-router.get('/login', authRoutes.isLoggedIn);
-router.get('/logout', authRoutes.logout);
-router.post('/login', passport.authenticate('local'), authRoutes.login);
+router.get('/api/v1/login', authRoutes.isLoggedIn);
+router.get('/api/v1/logout', authRoutes.logout);
+router.post('/api/v1/login', passport.authenticate('local'), authRoutes.login);
 
 
 /**** P R O V I D E R    R O U T E S **************************/
@@ -92,8 +92,8 @@ router.post('/api/v1/providers/:id/openOrder', providerRoutes.POST.order);
 router.get('/api/v1/subscribers/:id/orders', redirect.bind(this, 'client', 'orders'));
 router.get('/api/v1/subscribers/:id/subscriptions', subscriberRoutes.GET.subscriptions);
 
-router.post('/subscribers/:id/subscribe', subscriberRoutes.POST.subscribe);
-router.post('/subscribers/:id/unsubscribe', subscriberRoutes.POST.unsubscribe);
+router.post('/api/v1/subscribers/:id/subscribe', subscriberRoutes.POST.subscribe);
+router.post('/api/v1/subscribers/:id/unsubscribe', subscriberRoutes.POST.unsubscribe);
 
 
 /**** O R D E R S    R O U T E S ******************************/
