@@ -1,5 +1,5 @@
 var UnauthorizedError = require('../routes/httpErrors').Unauthorized;
-var LOGIN_PATH = '/api/login';
+var LOGIN_PATH = 'login';
 var slack = require('../integrations/slack').default;
 
 module.exports.auth = function(req, res, next) {
