@@ -15,5 +15,9 @@ module.exports.getClientByTid = function(tid, callback) {
                 Subscriber.findOne({tid: tid}, next);
             }
         }
-    ], callback);
+    ], function(err, res) {
+        if (err) return callback(err);
+        if (res === null) return callback(Error('client not found'));
+        callback(err, res);
+    });
 };
