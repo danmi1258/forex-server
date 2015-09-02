@@ -30,6 +30,8 @@ export function messageBindReqHandler(socket, message) {
 
     _findClientByTid(message.data.tid, (err, client) => {
         if (err) {
+            logger.error(`[messageBindReqHandler]: клиент tid=${message.data.tid} не найден. Сообщение: ${message}`);
+
             mdsoc.server.send(socket, {
                 type: messageTypes.BIND_CONF,
                 code: 403
