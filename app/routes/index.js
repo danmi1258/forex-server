@@ -43,7 +43,9 @@ function redirect(qExt, url='', req, res) {
 /* set default options for restify */
 const defaultOptions = {
     lean: false,
-    outputFn (req, res, data) {
+    outputFn (
+        req, res, data) {
+        let eventName;
         /* send data */
         res.json(data.result);
         /* ignore GET method */
@@ -52,12 +54,13 @@ const defaultOptions = {
         const result = normalize(req, data.result);
         /* try to get event name automaticaly */
         try {
-            const eventName = events[req.path.split('/')[3]][result.action];
+            eventName = events[req.path.split('/')[3]][result.action];
         }
         catch (err) {
             logger.error('web socket error', err);
             return;
         }
+
         /* send socket event from all active clients */
         emit(eventName, normalize(req, data.result));
     }
